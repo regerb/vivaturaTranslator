@@ -29,10 +29,6 @@ Component.register('vivatura-translator-settings', {
 
         languagePromptRepository() {
             return this.repositoryFactory.create('viv_translator_language_prompt');
-        },
-
-        httpClient() {
-            return Shopware.Application.getContainer('service').httpClient;
         }
     },
 

@@ -43,10 +43,6 @@ Component.register('vivatura-translator-button', {
     },
 
     computed: {
-        httpClient() {
-            return Shopware.Application.getContainer('service').httpClient;
-        },
-
         buttonLabel() {
             return this.$tc('vivatura-translator.button.translate');
         },
@@ -54,6 +50,12 @@ Component.register('vivatura-translator-button', {
         modalTitle() {
             return this.$tc('vivatura-translator.modal.title');
         }
+    },
+
+    created() {
+        // Get HTTP client for Shopware 6.6
+        const initContainer = Shopware.Application.getContainer('init');
+        this.httpClient = initContainer.httpClient;
     },
 
     methods: {
