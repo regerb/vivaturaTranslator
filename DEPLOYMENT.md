@@ -1,25 +1,39 @@
 # Deployment-Anleitung für VivaturaTranslator
 
-## Vorgenommene Änderungen
+## Vorgenommene Änderungen (Shopware 6.6 Kompatibilität)
 
 ### 1. Snippet-Registrierung (main.js)
 - **Problem:** Snippets waren nur im Modul registriert, nicht global verfügbar
-- **Lösung:** Snippets werden jetzt auch in der main.js global registriert, damit die `vivatura-translator-button` Komponente darauf zugreifen kann
+- **Lösung:** Snippets werden jetzt mit `Shopware.Locale.extend()` global registriert (SW 6.6 API)
+- **Fix:** `Application.addInitializerDecorator` existiert nicht in SW 6.6, wurde ersetzt
 
-### 2. Modul-Registrierung (module/vivatura-translator/index.js)
+### 2. HTTP Client Zugriff (component/vivatura-translator-button/index.js)
+- **Problem:** `Shopware.Application.getContainer('service').httpClient` existiert nicht in SW 6.6
+- **Lösung:** Nutze `Shopware.Application.getContainer('init').httpClient` stattdessen
+- **Fehler behoben:** "Cannot read properties of undefined (reading 'get')"
+
+### 3. Modul-Registrierung (module/vivatura-translator/index.js)
 - **Problem:** `settingsItem` war als Array definiert, sollte aber ein Objekt sein
 - **Lösung:** Geändert von Array zu Objekt
 
-### 3. Component Extensions
+### 4. Component Extensions
 - **Product Detail (extension/sw-product-detail/index.js):**
   - Computed Property `product` hinzugefügt für Zugriff auf Produktdaten
 
 - **CMS Detail (extension/sw-cms-detail/index.js):**
   - Computed Property `page` hinzugefügt für Zugriff auf CMS-Seitendaten
 
-### 4. Template-Blöcke
+### 5. Template-Blöcke
 - **Product Detail Template:** Verwendet `sw_product_detail_content_language_info` Block
 - **CMS Detail Template:** Verwendet `sw_cms_detail_content_language_switch` Block
+
+## Wichtige Shopware 6.6 API-Änderungen
+
+Das Plugin wurde für Shopware 6.6 angepasst. Folgende API-Änderungen wurden berücksichtigt:
+
+1. **Locale/Snippet Registration:** `Shopware.Locale.extend()` statt `Application.addInitializerDecorator()`
+2. **HTTP Client:** Aus `init` Container statt `service` Container
+3. **Module Settings:** Object statt Array für `settingsItem`
 
 ## Nach dem Deployment erforderliche Schritte
 
