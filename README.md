@@ -19,7 +19,7 @@ KI-gestützte Übersetzungen für Produkte, CMS-Seiten und Snippets mit Anthropi
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://gitlab.vivatura.care/vivatura/shopware/plugins/vivatura-translator.git"
+            "url": "https://github.com/regerb/vivaturaTranslator.git"
         }
     ]
 }
