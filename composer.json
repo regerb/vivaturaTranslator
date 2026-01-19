@@ -1,5 +1,5 @@
 {
-    "name": "vivatura/viv-translator",
+    "name": "vivatura/vivatura-translator",
     "description": "AI-powered translation plugin for Shopware 6 using Anthropic Claude API",
     "version": "1.0.0",
     "type": "shopware-platform-plugin",
@@ -13,10 +13,10 @@
         "shopware/core": "~6.6.0"
     },
     "extra": {
-        "shopware-plugin-class": "Vivatura\\VivTranslator\\VivTranslator",
+        "shopware-plugin-class": "Vivatura\\VivaturaTranslator\\VivaturaTranslator",
         "label": {
-            "de-DE": "VivTranslator - KI Übersetzungen",
-            "en-GB": "VivTranslator - AI Translations"
+            "de-DE": "Vivatura Translator - KI Übersetzungen",
+            "en-GB": "Vivatura Translator - AI Translations"
         },
         "description": {
             "de-DE": "Übersetzen Sie Produkte, CMS-Seiten und Textbausteine automatisch mit Anthropic Claude KI",
@@ -25,7 +25,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Vivatura\\VivTranslator\\": "src/"
+            "Vivatura\\VivaturaTranslator\\": "src/"
         }
     }
 }

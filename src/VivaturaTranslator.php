@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Vivatura\VivTranslator;
+namespace Vivatura\VivaturaTranslator;
 
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Doctrine\DBAL\Connection;
 
-class VivTranslator extends Plugin
+class VivaturaTranslator extends Plugin
 {
     public function install(InstallContext $installContext): void
     {

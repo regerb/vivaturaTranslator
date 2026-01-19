@@ -3,7 +3,7 @@ import './viv-translator-button.scss';
 
 const { Component, Mixin } = Shopware;
 
-Component.register('viv-translator-button', {
+Component.register('vivatura-translator-button', {
     template,
 
     inject: ['repositoryFactory'],

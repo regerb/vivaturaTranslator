@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Vivatura\VivTranslator\Service;
+namespace Vivatura\VivaturaTranslator\Service;
 
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;

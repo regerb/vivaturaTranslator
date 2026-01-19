@@ -4,7 +4,7 @@ import './viv-translator-settings.scss';
 const { Component, Mixin } = Shopware;
 const { Criteria } = Shopware.Data;
 
-Component.register('viv-translator-settings', {
+Component.register('vivatura-translator-settings', {
     template,
 
     inject: ['repositoryFactory'],

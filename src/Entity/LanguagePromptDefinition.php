@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Vivatura\VivTranslator\Entity;
+namespace Vivatura\VivaturaTranslator\Entity;
 
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;

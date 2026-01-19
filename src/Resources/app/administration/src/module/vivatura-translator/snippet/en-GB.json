@@ -1,5 +1,5 @@
 {
-    "viv-translator": {
+    "vivatura-translator": {
         "general": {
             "mainMenuItemGeneral": "VivTranslator",
             "descriptionTextModule": "AI-powered translations with Anthropic Claude"

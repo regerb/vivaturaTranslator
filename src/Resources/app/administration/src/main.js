@@ -1,5 +1,5 @@
-// VivTranslator Administration Entry Point
-import './module/viv-translator';
+// VivaturaTranslator Administration Entry Point
+import './module/vivatura-translator';
 import './extension/sw-product-detail';
 import './extension/sw-cms-detail';
-import './component/viv-translator-button';
+import './component/vivatura-translator-button';
