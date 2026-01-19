@@ -1,0 +1,40 @@
+{
+    "viv-translator": {
+        "general": {
+            "mainMenuItemGeneral": "VivTranslator",
+            "descriptionTextModule": "AI-powered translations with Anthropic Claude"
+        },
+        "button": {
+            "translate": "Translate with AI"
+        },
+        "modal": {
+            "title": "Start Translation",
+            "selectLanguages": "Select target languages",
+            "selectAll": "Select all",
+            "deselectAll": "Deselect all",
+            "startTranslation": "Start Translation",
+            "translating": "Translating...",
+            "results": "Results",
+            "fieldsTranslated": "fields translated",
+            "close": "Close"
+        },
+        "notification": {
+            "successTitle": "Success",
+            "errorTitle": "Error",
+            "warningTitle": "Warning",
+            "translationComplete": "Translation completed successfully",
+            "loadLanguagesError": "Failed to load languages",
+            "noLanguagesSelected": "Please select at least one target language"
+        },
+        "settings": {
+            "title": "VivTranslator Settings",
+            "save": "Save",
+            "infoTitle": "Language-specific Prompts",
+            "infoText": "Configure individual AI translation instructions for each language. These override the global fallback prompt.",
+            "fallbackHint": "If no language-specific prompt is configured, the global System Prompt from the plugin settings will be used.",
+            "languagePromptsTitle": "Prompts per Language",
+            "promptPlaceholder": "Optional language-specific instructions (empty = fallback will be used)",
+            "promptsSaved": "Language settings have been saved"
+        }
+    }
+}

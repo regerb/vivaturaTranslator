@@ -1,0 +1,40 @@
+{
+    "viv-translator": {
+        "general": {
+            "mainMenuItemGeneral": "VivTranslator",
+            "descriptionTextModule": "KI-gestützte Übersetzungen mit Anthropic Claude"
+        },
+        "button": {
+            "translate": "Mit KI übersetzen"
+        },
+        "modal": {
+            "title": "Übersetzung starten",
+            "selectLanguages": "Zielsprachen auswählen",
+            "selectAll": "Alle auswählen",
+            "deselectAll": "Alle abwählen",
+            "startTranslation": "Übersetzung starten",
+            "translating": "Übersetzung läuft...",
+            "results": "Ergebnisse",
+            "fieldsTranslated": "Felder übersetzt",
+            "close": "Schließen"
+        },
+        "notification": {
+            "successTitle": "Erfolg",
+            "errorTitle": "Fehler",
+            "warningTitle": "Hinweis",
+            "translationComplete": "Übersetzung erfolgreich abgeschlossen",
+            "loadLanguagesError": "Sprachen konnten nicht geladen werden",
+            "noLanguagesSelected": "Bitte wählen Sie mindestens eine Zielsprache aus"
+        },
+        "settings": {
+            "title": "VivTranslator Einstellungen",
+            "save": "Speichern",
+            "infoTitle": "Sprachspezifische Prompts",
+            "infoText": "Hier können Sie für jede Sprache individuelle Anweisungen für die KI-Übersetzung hinterlegen. Diese überschreiben den globalen Fallback-Prompt.",
+            "fallbackHint": "Wenn kein sprachspezifischer Prompt hinterlegt ist, wird der globale System Prompt aus den Plugin-Einstellungen verwendet.",
+            "languagePromptsTitle": "Prompts pro Sprache",
+            "promptPlaceholder": "Optionale sprachspezifische Anweisungen (leer = Fallback wird verwendet)",
+            "promptsSaved": "Spracheinstellungen wurden gespeichert"
+        }
+    }
+}

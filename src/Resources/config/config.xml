@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>API Einstellungen</title>
+        <title lang="en-GB">API Settings</title>
+
+        <input-field type="password">
+            <name>anthropicApiKey</name>
+            <label>Anthropic API Key</label>
+            <label lang="de-DE">Anthropic API Schlüssel</label>
+            <helpText>Your Anthropic API key from console.anthropic.com</helpText>
+            <helpText lang="de-DE">Ihr Anthropic API Schlüssel von console.anthropic.com</helpText>
+        </input-field>
+
+        <single-select>
+            <name>claudeModel</name>
+            <label>Claude Model</label>
+            <label lang="de-DE">Claude Modell</label>
+            <defaultValue>claude-3-haiku-20240307</defaultValue>
+            <options>
+                <option>
+                    <id>claude-3-haiku-20240307</id>
+                    <name>Claude 3 Haiku (schnell, günstig)</name>
+                    <name lang="en-GB">Claude 3 Haiku (fast, affordable)</name>
+                </option>
+                <option>
+                    <id>claude-3-5-sonnet-20241022</id>
+                    <name>Claude 3.5 Sonnet (ausgewogen)</name>
+                    <name lang="en-GB">Claude 3.5 Sonnet (balanced)</name>
+                </option>
+                <option>
+                    <id>claude-3-opus-20240229</id>
+                    <name>Claude 3 Opus (beste Qualität)</name>
+                    <name lang="en-GB">Claude 3 Opus (best quality)</name>
+                </option>
+            </options>
+        </single-select>
+    </card>
+
+    <card>
+        <title>Übersetzungseinstellungen</title>
+        <title lang="en-GB">Translation Settings</title>
+
+        <single-select>
+            <name>sourceLanguage</name>
+            <label>Quellsprache</label>
+            <label lang="en-GB">Source Language</label>
+            <defaultValue>de-DE</defaultValue>
+            <options>
+                <option>
+                    <id>de-DE</id>
+                    <name>Deutsch (de-DE)</name>
+                </option>
+                <option>
+                    <id>en-GB</id>
+                    <name>English (en-GB)</name>
+                </option>
+            </options>
+        </single-select>
+
+        <textarea>
+            <name>globalSystemPrompt</name>
+            <label>Globaler System Prompt (Fallback)</label>
+            <label lang="en-GB">Global System Prompt (Fallback)</label>
+            <defaultValue>Du bist ein professioneller Übersetzer für E-Commerce Inhalte. Übersetze präzise und behalte den Ton und Stil des Originals bei. Achte auf korrekte Fachbegriffe und kulturelle Anpassungen für das Zielland.</defaultValue>
+            <helpText>Dieser Prompt wird verwendet, wenn keine sprachspezifischen Anweisungen hinterlegt sind.</helpText>
+            <helpText lang="en-GB">This prompt is used when no language-specific instructions are configured.</helpText>
+        </textarea>
+    </card>
+</config>

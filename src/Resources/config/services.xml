@@ -1,0 +1,39 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <!-- Anthropic API Client -->
+        <service id="Vivatura\VivTranslator\Service\AnthropicClient">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="logger"/>
+        </service>
+
+        <!-- Translation Service -->
+        <service id="Vivatura\VivTranslator\Service\TranslationService">
+            <argument type="service" id="Vivatura\VivTranslator\Service\AnthropicClient"/>
+            <argument type="service" id="Vivatura\VivTranslator\Service\ContentExtractor"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="cms_page.repository"/>
+            <argument type="service" id="snippet.repository"/>
+            <argument type="service" id="language.repository"/>
+            <argument type="service" id="viv_translator_language_prompt.repository"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+        </service>
+
+        <!-- Content Extractor -->
+        <service id="Vivatura\VivTranslator\Service\ContentExtractor"/>
+
+        <!-- API Controller -->
+        <service id="Vivatura\VivTranslator\Controller\Api\TranslationController" public="true">
+            <argument type="service" id="Vivatura\VivTranslator\Service\TranslationService"/>
+            <argument type="service" id="language.repository"/>
+        </service>
+
+        <!-- Language Prompt Entity Definition -->
+        <service id="Vivatura\VivTranslator\Entity\LanguagePromptDefinition">
+            <tag name="shopware.entity.definition" entity="viv_translator_language_prompt"/>
+        </service>
+    </services>
+</container>
