@@ -27,14 +27,12 @@ Module.register('vivatura-translator', {
         }
     },
 
-    settingsItem: [
-        {
-            name: 'vivatura-translator-settings',
-            to: 'vivatura.translator.settings',
-            label: 'vivatura-translator.general.mainMenuItemGeneral',
-            group: 'plugins',
-            icon: 'regular-language'
-        }
-    ]
+    settingsItem: {
+        name: 'vivatura-translator-settings',
+        to: 'vivatura.translator.settings',
+        label: 'vivatura-translator.general.mainMenuItemGeneral',
+        group: 'plugins',
+        icon: 'regular-language'
+    }
 });
 
