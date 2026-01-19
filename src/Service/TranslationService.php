@@ -18,7 +18,7 @@ class TranslationService
     private EntityRepository $cmsPageRepository;
     private EntityRepository $snippetRepository;
     private EntityRepository $languageRepository;
-    private EntityRepository $languagePromptRepository;
+    private ?EntityRepository $languagePromptRepository;
     private SystemConfigService $systemConfigService;
 
     public function __construct(
@@ -28,7 +28,7 @@ class TranslationService
         EntityRepository $cmsPageRepository,
         EntityRepository $snippetRepository,
         EntityRepository $languageRepository,
-        EntityRepository $languagePromptRepository,
+        ?EntityRepository $languagePromptRepository,
         SystemConfigService $systemConfigService
     ) {
         $this->anthropicClient = $anthropicClient;
@@ -184,18 +184,21 @@ class TranslationService
      */
     private function getSystemPromptForLanguage(string $languageId, Context $context): string
     {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('languageId', $languageId));
-        
-        /** @var LanguagePromptEntity|null $prompt */
-        $prompt = $this->languagePromptRepository->search($criteria, $context)->first();
+        // Check if repository is available (might be null if migration hasn't run)
+        if ($this->languagePromptRepository !== null) {
+            $criteria = new Criteria();
+            $criteria->addFilter(new EqualsFilter('languageId', $languageId));
 
-        if ($prompt && !empty($prompt->getSystemPrompt())) {
-            return $prompt->getSystemPrompt();
+            /** @var LanguagePromptEntity|null $prompt */
+            $prompt = $this->languagePromptRepository->search($criteria, $context)->first();
+
+            if ($prompt && !empty($prompt->getSystemPrompt())) {
+                return $prompt->getSystemPrompt();
+            }
         }
 
         // Fallback to global prompt
-        return $this->systemConfigService->get('VivaturaTranslator.config.globalSystemPrompt') 
+        return $this->systemConfigService->get('VivaturaTranslator.config.globalSystemPrompt')
             ?? 'Du bist ein professioneller Übersetzer für E-Commerce Inhalte. Übersetze präzise und behalte den Ton und Stil des Originals bei.';
     }
 

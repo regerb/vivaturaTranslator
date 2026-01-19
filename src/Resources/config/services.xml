@@ -18,7 +18,7 @@
             <argument type="service" id="cms_page.repository"/>
             <argument type="service" id="snippet.repository"/>
             <argument type="service" id="language.repository"/>
-            <argument type="service" id="viv_translator_language_prompt.repository"/>
+            <argument type="service" id="viv_translator_language_prompt.repository" on-invalid="null"/>
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
         </service>
 
