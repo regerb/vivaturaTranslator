@@ -1,12 +1,12 @@
-import './page/viv-translator-settings';
+import './page/vivatura-translator-settings';
 import deDE from './snippet/de-DE.json';
 import enGB from './snippet/en-GB.json';
 
 const { Module } = Shopware;
 
-Component.register('vivatura-translator', {
+Module.register('vivatura-translator', {
     type: 'plugin',
-    name: 'VivTranslator',
+    name: 'VivaturaTranslator',
     title: 'vivatura-translator.general.mainMenuItemGeneral',
     description: 'vivatura-translator.general.descriptionTextModule',
     color: '#ff68b4',
@@ -29,7 +29,7 @@ Component.register('vivatura-translator', {
 
     settingsItem: [
         {
-            name: 'viv-translator-settings',
+            name: 'vivatura-translator-settings',
             to: 'vivatura.translator.settings',
             label: 'vivatura-translator.general.mainMenuItemGeneral',
             group: 'plugins',

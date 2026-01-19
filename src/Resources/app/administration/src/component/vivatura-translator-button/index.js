@@ -1,5 +1,5 @@
-import template from './viv-translator-button.html.twig';
-import './viv-translator-button.scss';
+import template from './vivatura-translator-button.html.twig';
+import './vivatura-translator-button.scss';
 
 const { Component, Mixin } = Shopware;
 
