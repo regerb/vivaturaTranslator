@@ -13,7 +13,7 @@
             <helpText lang="de-DE">Ihr Anthropic API Schlüssel von console.anthropic.com</helpText>
         </input-field>
 
-        <input-field type="select">
+        <input-field type="single-select">
             <name>claudeModel</name>
             <label>Claude Model</label>
             <label lang="de-DE">Claude Modell</label>
@@ -42,7 +42,7 @@
         <title>Übersetzungseinstellungen</title>
         <title lang="en-GB">Translation Settings</title>
 
-        <input-field type="select">
+        <input-field type="single-select">
             <name>sourceLanguage</name>
             <label>Quellsprache</label>
             <label lang="en-GB">Source Language</label>
