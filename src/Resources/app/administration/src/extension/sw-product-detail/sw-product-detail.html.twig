@@ -1,12 +1,11 @@
-{% block sw_product_detail_content_language_info %}
+{% block sw_product_detail %}
     {% parent %}
 
-    <sw-card v-if="product && product.id" class="vivatura-translator-card">
-        <vivatura-translator-button
-            entity-type="product"
-            :entity-id="product.id"
-            :disabled="isLoading"
-            @translation-complete="onSaveFinish"
-        ></vivatura-translator-button>
-    </sw-card>
+    <vivatura-translator-button
+        v-if="product && product.id"
+        entity-type="product"
+        :entity-id="product.id"
+        :disabled="isLoading"
+        style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;"
+    ></vivatura-translator-button>
 {% endblock %}

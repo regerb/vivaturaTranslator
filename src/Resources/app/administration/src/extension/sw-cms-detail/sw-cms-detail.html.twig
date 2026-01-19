@@ -1,12 +1,11 @@
-{% block sw_cms_detail_content_language_switch %}
+{% block sw_cms_detail %}
     {% parent %}
 
-    <div v-if="page && page.id" class="vivatura-translator-wrapper">
-        <vivatura-translator-button
-            entity-type="cms-page"
-            :entity-id="page.id"
-            :disabled="isLoading"
-            @translation-complete="onPageSave"
-        ></vivatura-translator-button>
-    </div>
+    <vivatura-translator-button
+        v-if="cmsPage && cmsPage.id"
+        entity-type="cms-page"
+        :entity-id="cmsPage.id"
+        :disabled="isLoading"
+        style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;"
+    ></vivatura-translator-button>
 {% endblock %}
