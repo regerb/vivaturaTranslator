@@ -1,12 +1,12 @@
-.viv-translator-button {
+.vivatura-translator-button {
     display: inline-block;
 }
 
-.viv-translator-modal-content {
+.vivatura-translator-modal-content {
     min-height: 200px;
 }
 
-.viv-translator-language-header {
+.vivatura-translator-language-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -16,13 +16,13 @@
         margin: 0;
     }
 
-    .viv-translator-language-actions {
+    .vivatura-translator-language-actions {
         display: flex;
         gap: 8px;
     }
 }
 
-.viv-translator-language-list {
+.vivatura-translator-language-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 8px;
@@ -33,7 +33,7 @@
     border-radius: 4px;
 }
 
-.viv-translator-language-item {
+.vivatura-translator-language-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -50,13 +50,13 @@
         background-color: var(--color-shopware-brand-50);
     }
 
-    .viv-translator-language-locale {
+    .vivatura-translator-language-locale {
         color: var(--color-gray-500);
         font-size: 12px;
     }
 }
 
-.viv-translator-progress {
+.vivatura-translator-progress {
     text-align: center;
     padding: 32px;
 
@@ -66,13 +66,13 @@
     }
 }
 
-.viv-translator-results {
+.vivatura-translator-results {
     h4 {
         margin-bottom: 16px;
     }
 }
 
-.viv-translator-result-item {
+.vivatura-translator-result-item {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -82,7 +82,7 @@
 
     &.is--success {
         background-color: var(--color-emerald-50);
-        
+
         .sw-icon {
             color: var(--color-emerald-500);
         }
@@ -90,21 +90,21 @@
 
     &.is--error {
         background-color: var(--color-crimson-50);
-        
+
         .sw-icon {
             color: var(--color-crimson-500);
         }
     }
 
-    .viv-translator-result-language {
+    .vivatura-translator-result-language {
         font-weight: 600;
     }
 
-    .viv-translator-result-fields {
+    .vivatura-translator-result-fields {
         color: var(--color-gray-600);
     }
 
-    .viv-translator-result-error {
+    .vivatura-translator-result-error {
         color: var(--color-crimson-500);
         font-size: 12px;
     }

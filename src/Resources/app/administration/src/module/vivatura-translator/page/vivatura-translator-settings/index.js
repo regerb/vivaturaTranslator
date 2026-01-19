@@ -1,5 +1,5 @@
 import template from './viv-translator-settings.html.twig';
-import './viv-translator-settings.scss';
+import './vivatura-translator-settings.scss';
 
 const { Component, Mixin } = Shopware;
 const { Criteria } = Shopware.Data;
@@ -64,7 +64,7 @@ Component.register('vivatura-translator-settings', {
 
             } catch (error) {
                 this.createNotificationError({
-                    title: this.$tc('viv-translator.notification.errorTitle'),
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
                     message: error.message
                 });
             } finally {
@@ -106,13 +106,13 @@ Component.register('vivatura-translator-settings', {
                 await Promise.all(savePromises);
 
                 this.createNotificationSuccess({
-                    title: this.$tc('viv-translator.notification.successTitle'),
-                    message: this.$tc('viv-translator.settings.promptsSaved')
+                    title: this.$tc('vivatura-translator.notification.successTitle'),
+                    message: this.$tc('vivatura-translator.settings.promptsSaved')
                 });
 
             } catch (error) {
                 this.createNotificationError({
-                    title: this.$tc('viv-translator.notification.errorTitle'),
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
                     message: error.message
                 });
             } finally {

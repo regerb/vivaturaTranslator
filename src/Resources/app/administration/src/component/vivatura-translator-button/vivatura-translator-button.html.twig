@@ -1,4 +1,4 @@
-{% block viv_translator_button %}
+{% block vivatura_translator_button %}
 <div class="vivatura-translator-button">
     <sw-button
         variant="ghost"
@@ -15,30 +15,30 @@
         variant="default"
         @modal-close="closeModal"
     >
-        {% block viv_translator_modal_content %}
-        <div class="viv-translator-modal-content">
+        {% block vivatura_translator_modal_content %}
+        <div class="vivatura-translator-modal-content">
             
-            {% block viv_translator_language_selection %}
-            <div v-if="!translationResults" class="viv-translator-language-selection">
-                <div class="viv-translator-language-header">
-                    <h4>{{ $tc('viv-translator.modal.selectLanguages') }}</h4>
-                    <div class="viv-translator-language-actions">
+            {% block vivatura_translator_language_selection %}
+            <div v-if="!translationResults" class="vivatura-translator-language-selection">
+                <div class="vivatura-translator-language-header">
+                    <h4>{{ $tc('vivatura-translator.modal.selectLanguages') }}</h4>
+                    <div class="vivatura-translator-language-actions">
                         <sw-button size="small" @click="selectAllLanguages">
-                            {{ $tc('viv-translator.modal.selectAll') }}
+                            {{ $tc('vivatura-translator.modal.selectAll') }}
                         </sw-button>
                         <sw-button size="small" @click="deselectAllLanguages">
-                            {{ $tc('viv-translator.modal.deselectAll') }}
+                            {{ $tc('vivatura-translator.modal.deselectAll') }}
                         </sw-button>
                     </div>
                 </div>
 
                 <sw-loader v-if="isLoading && availableLanguages.length === 0"></sw-loader>
 
-                <div v-else class="viv-translator-language-list">
+                <div v-else class="vivatura-translator-language-list">
                     <div
                         v-for="language in availableLanguages"
                         :key="language.id"
-                        class="viv-translator-language-item"
+                        class="vivatura-translator-language-item"
                         :class="{ 'is--selected': isLanguageSelected(language.id) }"
                         @click="toggleLanguage(language.id)"
                     >
@@ -46,26 +46,26 @@
                             :value="isLanguageSelected(language.id)"
                             :label="language.name"
                         ></sw-checkbox-field>
-                        <span class="viv-translator-language-locale">{{ language.locale }}</span>
+                        <span class="vivatura-translator-language-locale">{{ language.locale }}</span>
                     </div>
                 </div>
             </div>
             {% endblock %}
 
-            {% block viv_translator_progress %}
-            <div v-if="isLoading && translationProgress > 0" class="viv-translator-progress">
+            {% block vivatura_translator_progress %}
+            <div v-if="isLoading && translationProgress > 0" class="vivatura-translator-progress">
                 <sw-progress-bar :value="translationProgress"></sw-progress-bar>
-                <p>{{ $tc('viv-translator.modal.translating') }}</p>
+                <p>{{ $tc('vivatura-translator.modal.translating') }}</p>
             </div>
             {% endblock %}
 
-            {% block viv_translator_results %}
-            <div v-if="translationResults" class="viv-translator-results">
-                <h4>{{ $tc('viv-translator.modal.results') }}</h4>
+            {% block vivatura_translator_results %}
+            <div v-if="translationResults" class="vivatura-translator-results">
+                <h4>{{ $tc('vivatura-translator.modal.results') }}</h4>
                 <div
                     v-for="(result, languageCode) in translationResults"
                     :key="languageCode"
-                    class="viv-translator-result-item"
+                    class="vivatura-translator-result-item"
                     :class="{ 
                         'is--success': result.success, 
                         'is--error': !result.success 
@@ -75,11 +75,11 @@
                         :name="result.success ? 'regular-checkmark' : 'regular-times'" 
                         small
                     ></sw-icon>
-                    <span class="viv-translator-result-language">{{ languageCode }}</span>
-                    <span v-if="result.fields" class="viv-translator-result-fields">
-                        {{ result.fields }} {{ $tc('viv-translator.modal.fieldsTranslated') }}
+                    <span class="vivatura-translator-result-language">{{ languageCode }}</span>
+                    <span v-if="result.fields" class="vivatura-translator-result-fields">
+                        {{ result.fields }} {{ $tc('vivatura-translator.modal.fieldsTranslated') }}
                     </span>
-                    <span v-if="result.error" class="viv-translator-result-error">
+                    <span v-if="result.error" class="vivatura-translator-result-error">
                         {{ result.error }}
                     </span>
                 </div>
@@ -89,10 +89,10 @@
         </div>
         {% endblock %}
 
-        {% block viv_translator_modal_footer %}
+        {% block vivatura_translator_modal_footer %}
         <template #modal-footer>
             <sw-button @click="closeModal">
-                {{ $tc('viv-translator.modal.close') }}
+                {{ $tc('vivatura-translator.modal.close') }}
             </sw-button>
             <sw-button
                 v-if="!translationResults"
@@ -101,7 +101,7 @@
                 @click="startTranslation"
             >
                 <sw-loader v-if="isLoading" size="16px"></sw-loader>
-                {{ $tc('viv-translator.modal.startTranslation') }}
+                {{ $tc('vivatura-translator.modal.startTranslation') }}
             </sw-button>
         </template>
         {% endblock %}

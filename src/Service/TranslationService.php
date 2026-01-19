@@ -8,7 +8,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Vivatura\VivTranslator\Entity\LanguagePromptEntity;
+use Vivatura\VivaturaTranslator\Entity\LanguagePromptEntity;
 
 class TranslationService
 {
@@ -157,7 +157,7 @@ class TranslationService
      */
     public function getAvailableLanguages(Context $context): array
     {
-        $sourceLanguageCode = $this->systemConfigService->get('VivTranslator.config.sourceLanguage') ?? 'de-DE';
+        $sourceLanguageCode = $this->systemConfigService->get('VivaturaTranslator.config.sourceLanguage') ?? 'de-DE';
 
         $criteria = new Criteria();
         $criteria->addAssociation('locale');
@@ -195,7 +195,7 @@ class TranslationService
         }
 
         // Fallback to global prompt
-        return $this->systemConfigService->get('VivTranslator.config.globalSystemPrompt') 
+        return $this->systemConfigService->get('VivaturaTranslator.config.globalSystemPrompt') 
             ?? 'Du bist ein professioneller Übersetzer für E-Commerce Inhalte. Übersetze präzise und behalte den Ton und Stil des Originals bei.';
     }
 
@@ -288,7 +288,7 @@ class TranslationService
                     'translationKey' => $sourceSnippet->getTranslationKey(),
                     'value' => $translatedValue,
                     'setId' => $this->getSnippetSetForLanguage($targetLanguageId, $context),
-                    'author' => 'VivTranslator',
+                    'author' => 'VivaturaTranslator',
                 ]
             ], $context);
         }

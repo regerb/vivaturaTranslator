@@ -1,55 +1,55 @@
-{% block viv_translator_settings %}
+{% block vivatura_translator_settings %}
 <sw-page class="vivatura-translator-settings">
-    {% block viv_translator_settings_header %}
+    {% block vivatura_translator_settings_header %}
     <template #smart-bar-header>
-        <h2>{{ $tc('viv-translator.settings.title') }}</h2>
+        <h2>{{ $tc('vivatura-translator.settings.title') }}</h2>
     </template>
     {% endblock %}
 
-    {% block viv_translator_settings_actions %}
+    {% block vivatura_translator_settings_actions %}
     <template #smart-bar-actions>
         <sw-button
             variant="primary"
             :isLoading="isSaving"
             @click="savePrompts"
         >
-            {{ $tc('viv-translator.settings.save') }}
+            {{ $tc('vivatura-translator.settings.save') }}
         </sw-button>
     </template>
     {% endblock %}
 
-    {% block viv_translator_settings_content %}
+    {% block vivatura_translator_settings_content %}
     <template #content>
         <sw-card-view>
             <sw-loader v-if="isLoading"></sw-loader>
 
-            {% block viv_translator_settings_info %}
-            <sw-card :title="$tc('viv-translator.settings.infoTitle')">
-                <p>{{ $tc('viv-translator.settings.infoText') }}</p>
-                <p class="viv-translator-settings__hint">
+            {% block vivatura_translator_settings_info %}
+            <sw-card :title="$tc('vivatura-translator.settings.infoTitle')">
+                <p>{{ $tc('vivatura-translator.settings.infoText') }}</p>
+                <p class="vivatura-translator-settings__hint">
                     <sw-icon name="regular-info-circle" small></sw-icon>
-                    {{ $tc('viv-translator.settings.fallbackHint') }}
+                    {{ $tc('vivatura-translator.settings.fallbackHint') }}
                 </p>
             </sw-card>
             {% endblock %}
 
-            {% block viv_translator_settings_languages %}
+            {% block vivatura_translator_settings_languages %}
             <sw-card 
                 v-if="!isLoading"
-                :title="$tc('viv-translator.settings.languagePromptsTitle')"
+                :title="$tc('vivatura-translator.settings.languagePromptsTitle')"
             >
-                <div class="viv-translator-settings__language-list">
+                <div class="vivatura-translator-settings__language-list">
                     <div 
                         v-for="language in languages"
                         :key="language.id"
-                        class="viv-translator-settings__language-item"
+                        class="vivatura-translator-settings__language-item"
                     >
-                        <div class="viv-translator-settings__language-header">
+                        <div class="vivatura-translator-settings__language-header">
                             <strong>{{ getLanguageDisplayName(language) }}</strong>
                         </div>
                         <sw-textarea-field
                             :value="getPromptForLanguage(language.id)"
-                            :placeholder="$tc('viv-translator.settings.promptPlaceholder')"
+                            :placeholder="$tc('vivatura-translator.settings.promptPlaceholder')"
                             @input="setPromptForLanguage(language.id, $event)"
                         ></sw-textarea-field>
                     </div>

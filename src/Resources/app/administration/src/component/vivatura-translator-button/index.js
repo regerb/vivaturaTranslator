@@ -48,11 +48,11 @@ Component.register('vivatura-translator-button', {
         },
 
         buttonLabel() {
-            return this.$tc('viv-translator.button.translate');
+            return this.$tc('vivatura-translator.button.translate');
         },
 
         modalTitle() {
-            return this.$tc('viv-translator.modal.title');
+            return this.$tc('vivatura-translator.modal.title');
         }
     },
 
@@ -72,12 +72,12 @@ Component.register('vivatura-translator-button', {
         async loadLanguages() {
             this.isLoading = true;
             try {
-                const response = await this.httpClient.get('/api/viv-translator/languages');
+                const response = await this.httpClient.get('/api/vivatura-translator/languages');
                 this.availableLanguages = response.data.languages || [];
             } catch (error) {
                 this.createNotificationError({
-                    title: this.$tc('viv-translator.notification.errorTitle'),
-                    message: error.message || this.$tc('viv-translator.notification.loadLanguagesError')
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.message || this.$tc('vivatura-translator.notification.loadLanguagesError')
                 });
             } finally {
                 this.isLoading = false;
@@ -87,8 +87,8 @@ Component.register('vivatura-translator-button', {
         async startTranslation() {
             if (this.selectedLanguages.length === 0) {
                 this.createNotificationWarning({
-                    title: this.$tc('viv-translator.notification.warningTitle'),
-                    message: this.$tc('viv-translator.notification.noLanguagesSelected')
+                    title: this.$tc('vivatura-translator.notification.warningTitle'),
+                    message: this.$tc('vivatura-translator.notification.noLanguagesSelected')
                 });
                 return;
             }
@@ -108,8 +108,8 @@ Component.register('vivatura-translator-button', {
                 this.translationProgress = 100;
 
                 this.createNotificationSuccess({
-                    title: this.$tc('viv-translator.notification.successTitle'),
-                    message: this.$tc('viv-translator.notification.translationComplete')
+                    title: this.$tc('vivatura-translator.notification.successTitle'),
+                    message: this.$tc('vivatura-translator.notification.translationComplete')
                 });
 
                 // Emit event to refresh parent component
@@ -117,7 +117,7 @@ Component.register('vivatura-translator-button', {
 
             } catch (error) {
                 this.createNotificationError({
-                    title: this.$tc('viv-translator.notification.errorTitle'),
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
                     message: error.response?.data?.error || error.message
                 });
             } finally {
@@ -128,11 +128,11 @@ Component.register('vivatura-translator-button', {
         getEndpoint() {
             switch (this.entityType) {
                 case 'product':
-                    return `/api/viv-translator/translate-product/${this.entityId}`;
+                    return `/api/vivatura-translator/translate-product/${this.entityId}`;
                 case 'cms-page':
-                    return `/api/viv-translator/translate-cms-page/${this.entityId}`;
+                    return `/api/vivatura-translator/translate-cms-page/${this.entityId}`;
                 case 'snippet':
-                    return `/api/viv-translator/translate-snippet/${this.entityId}`;
+                    return `/api/vivatura-translator/translate-snippet/${this.entityId}`;
                 default:
                     throw new Error('Unknown entity type');
             }

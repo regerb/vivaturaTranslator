@@ -1,7 +1,7 @@
 {
     "vivatura-translator": {
         "general": {
-            "mainMenuItemGeneral": "VivTranslator",
+            "mainMenuItemGeneral": "Vivatura Translator",
             "descriptionTextModule": "AI-powered translations with Anthropic Claude"
         },
         "button": {
@@ -27,7 +27,7 @@
             "noLanguagesSelected": "Please select at least one target language"
         },
         "settings": {
-            "title": "VivTranslator Settings",
+            "title": "Vivatura Translator Settings",
             "save": "Save",
             "infoTitle": "Language-specific Prompts",
             "infoText": "Configure individual AI translation instructions for each language. These override the global fallback prompt.",

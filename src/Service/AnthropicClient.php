@@ -32,8 +32,8 @@ class AnthropicClient
      */
     public function translate(string $text, string $targetLanguage, string $systemPrompt): string
     {
-        $apiKey = $this->systemConfigService->get('VivTranslator.config.anthropicApiKey');
-        $model = $this->systemConfigService->get('VivTranslator.config.claudeModel') ?? 'claude-3-haiku-20240307';
+        $apiKey = $this->systemConfigService->get('VivaturaTranslator.config.anthropicApiKey');
+        $model = $this->systemConfigService->get('VivaturaTranslator.config.claudeModel') ?? 'claude-3-haiku-20240307';
 
         if (empty($apiKey)) {
             throw new \RuntimeException('Anthropic API key not configured. Please set it in plugin settings.');
@@ -68,8 +68,8 @@ class AnthropicClient
      */
     public function translateBatch(array $texts, string $targetLanguage, string $systemPrompt): array
     {
-        $apiKey = $this->systemConfigService->get('VivTranslator.config.anthropicApiKey');
-        $model = $this->systemConfigService->get('VivTranslator.config.claudeModel') ?? 'claude-3-haiku-20240307';
+        $apiKey = $this->systemConfigService->get('VivaturaTranslator.config.anthropicApiKey');
+        $model = $this->systemConfigService->get('VivaturaTranslator.config.claudeModel') ?? 'claude-3-haiku-20240307';
 
         if (empty($apiKey)) {
             throw new \RuntimeException('Anthropic API key not configured. Please set it in plugin settings.');

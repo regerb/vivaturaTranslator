@@ -4,11 +4,11 @@ import enGB from './snippet/en-GB.json';
 
 const { Module } = Shopware;
 
-Module.register('viv-translator', {
+Component.register('vivatura-translator', {
     type: 'plugin',
     name: 'VivTranslator',
-    title: 'viv-translator.general.mainMenuItemGeneral',
-    description: 'viv-translator.general.descriptionTextModule',
+    title: 'vivatura-translator.general.mainMenuItemGeneral',
+    description: 'vivatura-translator.general.descriptionTextModule',
     color: '#ff68b4',
     icon: 'regular-language',
 
@@ -19,7 +19,7 @@ Module.register('viv-translator', {
 
     routes: {
         settings: {
-            component: 'viv-translator-settings',
+            component: 'vivatura-translator-settings',
             path: 'settings',
             meta: {
                 parentPath: 'sw.settings.index'
@@ -30,8 +30,8 @@ Module.register('viv-translator', {
     settingsItem: [
         {
             name: 'viv-translator-settings',
-            to: 'viv.translator.settings',
-            label: 'viv-translator.general.mainMenuItemGeneral',
+            to: 'vivatura.translator.settings',
+            label: 'vivatura-translator.general.mainMenuItemGeneral',
             group: 'plugins',
             icon: 'regular-language'
         }

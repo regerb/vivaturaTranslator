@@ -9,7 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
-use Vivatura\VivTranslator\Service\TranslationService;
+use Vivatura\VivaturaTranslator\Service\TranslationService;
 
 #[Route(defaults: ['_routeScope' => ['api']])]
 class TranslationController extends AbstractController
@@ -29,8 +29,8 @@ class TranslationController extends AbstractController
      * Get available target languages
      */
     #[Route(
-        path: '/api/viv-translator/languages',
-        name: 'api.viv_translator.languages',
+        path: '/api/vivatura-translator/languages',
+        name: 'api.vivatura_translator.languages',
         methods: ['GET']
     )]
     public function getLanguages(Context $context): JsonResponse
@@ -43,8 +43,8 @@ class TranslationController extends AbstractController
      * Translate a single product
      */
     #[Route(
-        path: '/api/viv-translator/translate-product/{productId}',
-        name: 'api.viv_translator.translate_product',
+        path: '/api/vivatura-translator/translate-product/{productId}',
+        name: 'api.vivatura_translator.translate_product',
         methods: ['POST']
     )]
     public function translateProduct(string $productId, Request $request, Context $context): JsonResponse
@@ -68,8 +68,8 @@ class TranslationController extends AbstractController
      * Translate multiple products (bulk)
      */
     #[Route(
-        path: '/api/viv-translator/translate-products',
-        name: 'api.viv_translator.translate_products',
+        path: '/api/vivatura-translator/translate-products',
+        name: 'api.vivatura_translator.translate_products',
         methods: ['POST']
     )]
     public function translateProducts(Request $request, Context $context): JsonResponse
@@ -102,8 +102,8 @@ class TranslationController extends AbstractController
      * Translate a single CMS page
      */
     #[Route(
-        path: '/api/viv-translator/translate-cms-page/{pageId}',
-        name: 'api.viv_translator.translate_cms_page',
+        path: '/api/vivatura-translator/translate-cms-page/{pageId}',
+        name: 'api.vivatura_translator.translate_cms_page',
         methods: ['POST']
     )]
     public function translateCmsPage(string $pageId, Request $request, Context $context): JsonResponse
@@ -127,8 +127,8 @@ class TranslationController extends AbstractController
      * Translate a single snippet
      */
     #[Route(
-        path: '/api/viv-translator/translate-snippet/{snippetId}',
-        name: 'api.viv_translator.translate_snippet',
+        path: '/api/vivatura-translator/translate-snippet/{snippetId}',
+        name: 'api.vivatura_translator.translate_snippet',
         methods: ['POST']
     )]
     public function translateSnippet(string $snippetId, Request $request, Context $context): JsonResponse
@@ -152,8 +152,8 @@ class TranslationController extends AbstractController
      * Translate multiple snippets (bulk)
      */
     #[Route(
-        path: '/api/viv-translator/translate-snippets',
-        name: 'api.viv_translator.translate_snippets',
+        path: '/api/vivatura-translator/translate-snippets',
+        name: 'api.vivatura_translator.translate_snippets',
         methods: ['POST']
     )]
     public function translateSnippets(Request $request, Context $context): JsonResponse

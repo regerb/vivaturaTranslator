@@ -1,7 +1,7 @@
 {
     "vivatura-translator": {
         "general": {
-            "mainMenuItemGeneral": "VivTranslator",
+            "mainMenuItemGeneral": "Vivatura Translator",
             "descriptionTextModule": "KI-gestützte Übersetzungen mit Anthropic Claude"
         },
         "button": {
@@ -27,7 +27,7 @@
             "noLanguagesSelected": "Bitte wählen Sie mindestens eine Zielsprache aus"
         },
         "settings": {
-            "title": "VivTranslator Einstellungen",
+            "title": "Vivatura Translator Einstellungen",
             "save": "Speichern",
             "infoTitle": "Sprachspezifische Prompts",
             "infoText": "Hier können Sie für jede Sprache individuelle Anweisungen für die KI-Übersetzung hinterlegen. Diese überschreiben den globalen Fallback-Prompt.",

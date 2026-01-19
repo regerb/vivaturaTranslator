@@ -1,4 +1,4 @@
-# VivTranslator - Shopware 6 AI Translation Plugin
+# VivaturaTranslator - Shopware 6 AI Translation Plugin
 
 KI-gestützte Übersetzungen für Produkte, CMS-Seiten und Snippets mit Anthropic Claude.
 
@@ -19,34 +19,34 @@ KI-gestützte Übersetzungen für Produkte, CMS-Seiten und Snippets mit Anthropi
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/DEIN-ACCOUNT/VivTranslator.git"
+            "url": "https://gitlab.vivatura.care/vivatura/shopware/plugins/vivatura-translator.git"
         }
     ]
 }
 ```
 
 ```bash
-composer require vivatura/viv-translator:dev-main
+composer require vivatura/vivatura-translator:dev-main
 bin/console plugin:refresh
-bin/console plugin:install VivTranslator --activate
+bin/console plugin:install VivaturaTranslator --activate
 ```
 
 ### Manuell
 
-1. Plugin nach `custom/plugins/VivTranslator/` kopieren
+1. Plugin nach `custom/plugins/VivaturaTranslator/` kopieren
 2. `bin/console plugin:refresh`
-3. `bin/console plugin:install VivTranslator --activate`
+3. `bin/console plugin:install VivaturaTranslator --activate`
 
 ## Konfiguration
 
-1. **Erweiterungen > Meine Erweiterungen > VivTranslator > Konfigurieren**
+1. **Erweiterungen > Meine Erweiterungen > VivaturaTranslator > Konfigurieren**
 2. Anthropic API Key eintragen (von console.anthropic.com)
 3. Claude Modell wählen (Haiku/Sonnet/Opus)
 4. Optional: Globalen System Prompt anpassen
 
 ### Sprachspezifische Prompts
 
-Unter **Einstellungen > VivTranslator** können für jede Sprache individuelle Übersetzungsanweisungen hinterlegt werden.
+Unter **Einstellungen > Vivatura Translator** können für jede Sprache individuelle Übersetzungsanweisungen hinterlegt werden.
 
 ## Verwendung
 
