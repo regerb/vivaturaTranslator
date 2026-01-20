@@ -6,6 +6,10 @@
 /.vscode/
 *.swp
 *.swo
+*.code-workspace
+
+# Claude Code
+/.claude/
 
 # OS
 .DS_Store
@@ -18,3 +22,6 @@ Thumbs.db
 # Test files
 /phpunit.xml
 /coverage/
+
+# Logs
+*.log

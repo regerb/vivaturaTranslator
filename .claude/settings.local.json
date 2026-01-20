@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix\\(admin\\): use correct Locale API for Shopware 6.6\n\nReplace Application.addInitializerDecorator \\(not available in SW 6.6\\)\nwith direct Shopware.Locale.extend\\(\\) calls for snippet registration.\n\nThis fixes the JavaScript error:\n\"Uncaught TypeError: c.addInitializerDecorator is not a function\"\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
-    ]
-  }
-}
