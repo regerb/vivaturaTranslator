@@ -17,9 +17,11 @@
             <argument type="service" id="product.repository"/>
             <argument type="service" id="cms_page.repository"/>
             <argument type="service" id="snippet.repository"/>
+            <argument type="service" id="snippet_set.repository"/>
             <argument type="service" id="language.repository"/>
             <argument type="service" id="viv_translator_language_prompt.repository" on-invalid="null"/>
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="cms_slot.repository"/>
         </service>
 
         <!-- Content Extractor -->
@@ -29,6 +31,10 @@
         <service id="Vivatura\VivaturaTranslator\Controller\Api\TranslationController" public="true">
             <argument type="service" id="Vivatura\VivaturaTranslator\Service\TranslationService"/>
             <argument type="service" id="language.repository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="cms_page.repository"/>
+            <argument type="service" id="snippet_set.repository"/>
+            <argument type="service" id="snippet.repository"/>
         </service>
 
         <!-- Language Prompt Entity Definition -->

@@ -1,4 +1,4 @@
-import './page/vivatura-translator-settings';
+import './page/vivatura-translator-dashboard';
 import deDE from './snippet/de-DE.json';
 import enGB from './snippet/en-GB.json';
 
@@ -18,9 +18,9 @@ Module.register('vivatura-translator', {
     },
 
     routes: {
-        settings: {
-            component: 'vivatura-translator-settings',
-            path: 'settings',
+        index: {
+            component: 'vivatura-translator-dashboard',
+            path: 'index',
             meta: {
                 parentPath: 'sw.settings.index'
             }
@@ -28,11 +28,10 @@ Module.register('vivatura-translator', {
     },
 
     settingsItem: {
-        name: 'vivatura-translator-settings',
-        to: 'vivatura.translator.settings',
+        name: 'vivatura-translator',
+        to: 'vivatura.translator.index',
         label: 'vivatura-translator.general.mainMenuItemGeneral',
         group: 'plugins',
         icon: 'regular-language'
     }
 });
-

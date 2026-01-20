@@ -1,0 +1,492 @@
+import template from './vivatura-translator-dashboard.html.twig';
+import './vivatura-translator-dashboard.scss';
+
+const { Component, Mixin } = Shopware;
+
+Component.register('vivatura-translator-dashboard', {
+    template,
+
+    inject: ['repositoryFactory'],
+
+    mixins: [
+        Mixin.getByName('notification')
+    ],
+
+    data() {
+        return {
+            isLoading: false,
+            activeTab: 'products',
+
+            // Status
+            status: {
+                languages: 0,
+                products: 0,
+                cmsPages: 0,
+                snippetSets: 0
+            },
+
+            // Languages
+            availableLanguages: [],
+            selectedLanguages: [],
+
+            // Products
+            products: [],
+            selectedProducts: [],
+            productSearch: '',
+            productPage: 1,
+            productLimit: 25,
+            productTotal: 0,
+
+            // CMS Pages
+            cmsPages: [],
+            selectedCmsPages: [],
+            cmsSearch: '',
+            cmsPage: 1,
+            cmsLimit: 25,
+            cmsTotal: 0,
+
+            // Snippets
+            snippetSets: [],
+            sourceSnippetSet: null,
+            targetSnippetSet: null,
+            snippets: [],
+            selectedSnippets: [],
+            snippetSearch: '',
+            snippetPage: 1,
+            snippetLimit: 100,
+            snippetTotal: 0,
+
+            // Translation
+            isTranslating: false,
+            translationProgress: 0,
+            translationResults: null,
+
+            // Settings
+            languagePrompts: {}
+        };
+    },
+
+    computed: {
+        httpClient() {
+            const initContainer = Shopware.Application.getContainer('init');
+            return initContainer.httpClient;
+        },
+
+        languageRepository() {
+            return this.repositoryFactory.create('language');
+        },
+
+        languagePromptRepository() {
+            return this.repositoryFactory.create('viv_translator_language_prompt');
+        },
+
+        allProductsSelected() {
+            return this.products.length > 0 && this.selectedProducts.length === this.products.length;
+        },
+
+        allCmsPagesSelected() {
+            return this.cmsPages.length > 0 && this.selectedCmsPages.length === this.cmsPages.length;
+        },
+
+        allSnippetsSelected() {
+            return this.snippets.length > 0 && this.selectedSnippets.length === this.snippets.length;
+        },
+
+        canTranslateProducts() {
+            return this.selectedProducts.length > 0 && this.selectedLanguages.length > 0;
+        },
+
+        canTranslateCmsPages() {
+            return this.selectedCmsPages.length > 0 && this.selectedLanguages.length > 0;
+        },
+
+        canTranslateSnippets() {
+            return this.sourceSnippetSet && this.targetSnippetSet && this.sourceSnippetSet !== this.targetSnippetSet;
+        }
+    },
+
+    created() {
+        this.loadInitialData();
+    },
+
+    methods: {
+        async loadInitialData() {
+            this.isLoading = true;
+            try {
+                await Promise.all([
+                    this.loadStatus(),
+                    this.loadLanguages(),
+                    this.loadProducts(),
+                    this.loadCmsPages(),
+                    this.loadSnippetSets()
+                ]);
+            } catch (error) {
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.message
+                });
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async loadStatus() {
+            const response = await this.httpClient.get('/api/vivatura-translator/translation-status');
+            this.status = response.data;
+        },
+
+        async loadLanguages() {
+            const response = await this.httpClient.get('/api/vivatura-translator/languages');
+            this.availableLanguages = response.data.languages || [];
+        },
+
+        // ========================================
+        // PRODUCTS
+        // ========================================
+
+        async loadProducts() {
+            this.isLoading = true;
+            try {
+                const params = new URLSearchParams({
+                    page: this.productPage,
+                    limit: this.productLimit,
+                    search: this.productSearch
+                });
+                const response = await this.httpClient.get(`/api/vivatura-translator/products?${params}`);
+                this.products = response.data.products || [];
+                this.productTotal = response.data.total || 0;
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        onProductSearch() {
+            this.productPage = 1;
+            this.loadProducts();
+        },
+
+        onProductPageChange(page) {
+            this.productPage = page;
+            this.loadProducts();
+        },
+
+        toggleProduct(productId) {
+            const index = this.selectedProducts.indexOf(productId);
+            if (index === -1) {
+                this.selectedProducts.push(productId);
+            } else {
+                this.selectedProducts.splice(index, 1);
+            }
+        },
+
+        toggleAllProducts() {
+            if (this.allProductsSelected) {
+                this.selectedProducts = [];
+            } else {
+                this.selectedProducts = this.products.map(p => p.id);
+            }
+        },
+
+        async translateSelectedProducts() {
+            if (!this.canTranslateProducts) return;
+
+            this.isTranslating = true;
+            this.translationProgress = 0;
+
+            try {
+                const response = await this.httpClient.post('/api/vivatura-translator/translate-products', {
+                    productIds: this.selectedProducts,
+                    targetLanguageIds: this.selectedLanguages
+                });
+
+                this.translationResults = response.data;
+                this.translationProgress = 100;
+
+                const summary = response.data.summary;
+                this.createNotificationSuccess({
+                    title: this.$tc('vivatura-translator.notification.successTitle'),
+                    message: this.$tc('vivatura-translator.notification.productsTranslated', summary.success, { count: summary.success, errors: summary.errors })
+                });
+
+                this.selectedProducts = [];
+                await this.loadProducts();
+            } catch (error) {
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.response?.data?.error || error.message
+                });
+            } finally {
+                this.isTranslating = false;
+            }
+        },
+
+        // ========================================
+        // CMS PAGES
+        // ========================================
+
+        async loadCmsPages() {
+            this.isLoading = true;
+            try {
+                const params = new URLSearchParams({
+                    page: this.cmsPage,
+                    limit: this.cmsLimit,
+                    search: this.cmsSearch
+                });
+                const response = await this.httpClient.get(`/api/vivatura-translator/cms-pages?${params}`);
+                this.cmsPages = response.data.pages || [];
+                this.cmsTotal = response.data.total || 0;
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        onCmsSearch() {
+            this.cmsPage = 1;
+            this.loadCmsPages();
+        },
+
+        onCmsPageChange(page) {
+            this.cmsPage = page;
+            this.loadCmsPages();
+        },
+
+        toggleCmsPage(pageId) {
+            const index = this.selectedCmsPages.indexOf(pageId);
+            if (index === -1) {
+                this.selectedCmsPages.push(pageId);
+            } else {
+                this.selectedCmsPages.splice(index, 1);
+            }
+        },
+
+        toggleAllCmsPages() {
+            if (this.allCmsPagesSelected) {
+                this.selectedCmsPages = [];
+            } else {
+                this.selectedCmsPages = this.cmsPages.map(p => p.id);
+            }
+        },
+
+        async translateSelectedCmsPages() {
+            if (!this.canTranslateCmsPages) return;
+
+            this.isTranslating = true;
+            this.translationProgress = 0;
+
+            try {
+                const response = await this.httpClient.post('/api/vivatura-translator/translate-cms-pages', {
+                    pageIds: this.selectedCmsPages,
+                    targetLanguageIds: this.selectedLanguages
+                });
+
+                this.translationResults = response.data;
+                this.translationProgress = 100;
+
+                const summary = response.data.summary;
+                this.createNotificationSuccess({
+                    title: this.$tc('vivatura-translator.notification.successTitle'),
+                    message: this.$tc('vivatura-translator.notification.cmsPagesTranslated', summary.success, { count: summary.success, errors: summary.errors })
+                });
+
+                this.selectedCmsPages = [];
+                await this.loadCmsPages();
+            } catch (error) {
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.response?.data?.error || error.message
+                });
+            } finally {
+                this.isTranslating = false;
+            }
+        },
+
+        // ========================================
+        // SNIPPETS
+        // ========================================
+
+        async loadSnippetSets() {
+            const response = await this.httpClient.get('/api/vivatura-translator/snippet-sets');
+            this.snippetSets = response.data.snippetSets || [];
+        },
+
+        async onSourceSnippetSetChange() {
+            if (this.sourceSnippetSet) {
+                await this.loadSnippets();
+            } else {
+                this.snippets = [];
+            }
+        },
+
+        async loadSnippets() {
+            if (!this.sourceSnippetSet) return;
+
+            this.isLoading = true;
+            try {
+                const params = new URLSearchParams({
+                    setId: this.sourceSnippetSet,
+                    page: this.snippetPage,
+                    limit: this.snippetLimit,
+                    search: this.snippetSearch
+                });
+                const response = await this.httpClient.get(`/api/vivatura-translator/snippets?${params}`);
+                this.snippets = response.data.snippets || [];
+                this.snippetTotal = response.data.total || 0;
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        onSnippetSearch() {
+            this.snippetPage = 1;
+            this.loadSnippets();
+        },
+
+        onSnippetPageChange(page) {
+            this.snippetPage = page;
+            this.loadSnippets();
+        },
+
+        toggleSnippet(snippetId) {
+            const index = this.selectedSnippets.indexOf(snippetId);
+            if (index === -1) {
+                this.selectedSnippets.push(snippetId);
+            } else {
+                this.selectedSnippets.splice(index, 1);
+            }
+        },
+
+        toggleAllSnippets() {
+            if (this.allSnippetsSelected) {
+                this.selectedSnippets = [];
+            } else {
+                this.selectedSnippets = this.snippets.map(s => s.id);
+            }
+        },
+
+        async translateSnippetSet() {
+            if (!this.canTranslateSnippets) return;
+
+            this.isTranslating = true;
+            this.translationProgress = 0;
+
+            try {
+                const payload = {
+                    sourceSetId: this.sourceSnippetSet,
+                    targetSetId: this.targetSnippetSet
+                };
+
+                // If specific snippets selected, include them
+                if (this.selectedSnippets.length > 0) {
+                    payload.snippetIds = this.selectedSnippets;
+                }
+
+                const response = await this.httpClient.post('/api/vivatura-translator/translate-snippet-set', payload);
+
+                this.translationResults = response.data;
+                this.translationProgress = 100;
+
+                const result = response.data.results;
+                this.createNotificationSuccess({
+                    title: this.$tc('vivatura-translator.notification.successTitle'),
+                    message: this.$tc('vivatura-translator.notification.snippetsTranslated', result.translated, { count: result.translated, errors: result.errors })
+                });
+
+                this.selectedSnippets = [];
+            } catch (error) {
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.response?.data?.error || error.message
+                });
+            } finally {
+                this.isTranslating = false;
+            }
+        },
+
+        // ========================================
+        // LANGUAGES
+        // ========================================
+
+        toggleLanguage(languageId) {
+            const index = this.selectedLanguages.indexOf(languageId);
+            if (index === -1) {
+                this.selectedLanguages.push(languageId);
+            } else {
+                this.selectedLanguages.splice(index, 1);
+            }
+        },
+
+        selectAllLanguages() {
+            this.selectedLanguages = this.availableLanguages.map(l => l.id);
+        },
+
+        deselectAllLanguages() {
+            this.selectedLanguages = [];
+        },
+
+        isLanguageSelected(languageId) {
+            return this.selectedLanguages.includes(languageId);
+        },
+
+        // ========================================
+        // SETTINGS
+        // ========================================
+
+        async loadLanguagePrompts() {
+            const criteria = new Shopware.Data.Criteria();
+            const prompts = await this.languagePromptRepository.search(criteria, Shopware.Context.api);
+
+            this.languagePrompts = {};
+            prompts.forEach(prompt => {
+                this.languagePrompts[prompt.languageId] = prompt;
+            });
+        },
+
+        getPromptForLanguage(languageId) {
+            return this.languagePrompts[languageId]?.systemPrompt || '';
+        },
+
+        setPromptForLanguage(languageId, value) {
+            if (!this.languagePrompts[languageId]) {
+                const newPrompt = this.languagePromptRepository.create(Shopware.Context.api);
+                newPrompt.languageId = languageId;
+                newPrompt.systemPrompt = value;
+                this.languagePrompts[languageId] = newPrompt;
+            } else {
+                this.languagePrompts[languageId].systemPrompt = value;
+            }
+        },
+
+        async savePrompts() {
+            this.isLoading = true;
+            try {
+                const savePromises = Object.values(this.languagePrompts).map(prompt => {
+                    if (prompt.id) {
+                        return this.languagePromptRepository.save(prompt, Shopware.Context.api);
+                    }
+                    return this.languagePromptRepository.create(prompt, Shopware.Context.api);
+                });
+
+                await Promise.all(savePromises);
+
+                this.createNotificationSuccess({
+                    title: this.$tc('vivatura-translator.notification.successTitle'),
+                    message: this.$tc('vivatura-translator.settings.promptsSaved')
+                });
+            } catch (error) {
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.message
+                });
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        onTabChange(tabName) {
+            this.activeTab = tabName;
+            if (tabName === 'settings') {
+                this.loadLanguagePrompts();
+            }
+        }
+    }
+});

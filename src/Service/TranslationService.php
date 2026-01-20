@@ -12,43 +12,24 @@ use Vivatura\VivaturaTranslator\Entity\LanguagePromptEntity;
 
 class TranslationService
 {
-    private AnthropicClient $anthropicClient;
-    private ContentExtractor $contentExtractor;
-    private EntityRepository $productRepository;
-    private EntityRepository $cmsPageRepository;
-    private EntityRepository $snippetRepository;
-    private EntityRepository $languageRepository;
-    private ?EntityRepository $languagePromptRepository;
-    private SystemConfigService $systemConfigService;
-
     public function __construct(
-        AnthropicClient $anthropicClient,
-        ContentExtractor $contentExtractor,
-        EntityRepository $productRepository,
-        EntityRepository $cmsPageRepository,
-        EntityRepository $snippetRepository,
-        EntityRepository $languageRepository,
-        ?EntityRepository $languagePromptRepository,
-        SystemConfigService $systemConfigService
+        private readonly AnthropicClient $anthropicClient,
+        private readonly ContentExtractor $contentExtractor,
+        private readonly EntityRepository $productRepository,
+        private readonly EntityRepository $cmsPageRepository,
+        private readonly EntityRepository $snippetRepository,
+        private readonly EntityRepository $snippetSetRepository,
+        private readonly EntityRepository $languageRepository,
+        private readonly ?EntityRepository $languagePromptRepository,
+        private readonly SystemConfigService $systemConfigService,
+        private readonly EntityRepository $cmsSlotRepository
     ) {
-        $this->anthropicClient = $anthropicClient;
-        $this->contentExtractor = $contentExtractor;
-        $this->productRepository = $productRepository;
-        $this->cmsPageRepository = $cmsPageRepository;
-        $this->snippetRepository = $snippetRepository;
-        $this->languageRepository = $languageRepository;
-        $this->languagePromptRepository = $languagePromptRepository;
-        $this->systemConfigService = $systemConfigService;
     }
 
-    /**
-     * Translate a product to specified target languages
-     *
-     * @param string $productId
-     * @param array $targetLanguageIds
-     * @param Context $context
-     * @return array Translation results per language
-     */
+    // ========================================
+    // PRODUCT TRANSLATION
+    // ========================================
+
     public function translateProduct(string $productId, array $targetLanguageIds, Context $context): array
     {
         $criteria = new Criteria([$productId]);
@@ -82,9 +63,10 @@ class TranslationService
         return $results;
     }
 
-    /**
-     * Translate a CMS page to specified target languages
-     */
+    // ========================================
+    // CMS PAGE TRANSLATION (WITH SLOTS)
+    // ========================================
+
     public function translateCmsPage(string $pageId, array $targetLanguageIds, Context $context): array
     {
         $criteria = new Criteria([$pageId]);
@@ -101,6 +83,9 @@ class TranslationService
             return ['success' => true, 'message' => 'No translatable content found'];
         }
 
+        // Collect slot information for later update
+        $slotMapping = $this->buildSlotMapping($page);
+
         $results = [];
         foreach ($targetLanguageIds as $languageId) {
             $language = $this->getLanguage($languageId, $context);
@@ -109,7 +94,7 @@ class TranslationService
 
             try {
                 $translated = $this->anthropicClient->translateBatch($content, $languageCode, $systemPrompt);
-                $this->saveCmsPageTranslation($pageId, $page, $languageId, $translated, $context);
+                $this->saveCmsPageTranslation($pageId, $page, $languageId, $translated, $slotMapping, $context);
                 $results[$languageCode] = ['success' => true, 'fields' => count($translated)];
             } catch (\Exception $e) {
                 $results[$languageCode] = ['success' => false, 'error' => $e->getMessage()];
@@ -119,42 +104,271 @@ class TranslationService
         return $results;
     }
 
-    /**
-     * Translate a snippet to a target language
-     */
-    public function translateSnippet(string $snippetId, string $targetLanguageId, Context $context): array
+    private function buildSlotMapping($page): array
     {
-        $criteria = new Criteria([$snippetId]);
-        $snippet = $this->snippetRepository->search($criteria, $context)->first();
+        $mapping = [];
+        $slotIndex = 0;
+
+        $sections = $page->getSections();
+        if ($sections === null) {
+            return $mapping;
+        }
+
+        foreach ($sections as $section) {
+            $blocks = $section->getBlocks();
+            if ($blocks === null) continue;
+
+            foreach ($blocks as $block) {
+                $slots = $block->getSlots();
+                if ($slots === null) continue;
+
+                foreach ($slots as $slot) {
+                    $mapping[$slotIndex] = [
+                        'slotId' => $slot->getId(),
+                        'config' => $slot->getConfig() ?? [],
+                    ];
+                    $slotIndex++;
+                }
+            }
+        }
+
+        return $mapping;
+    }
+
+    private function saveCmsPageTranslation(string $pageId, $page, string $languageId, array $translated, array $slotMapping, Context $context): void
+    {
+        // Create language-specific context
+        $translatedContext = new Context(
+            $context->getSource(),
+            $context->getRuleIds(),
+            $context->getCurrencyId(),
+            [$languageId]
+        );
+
+        // Update page name if translated
+        if (isset($translated['name'])) {
+            $this->cmsPageRepository->update([
+                [
+                    'id' => $pageId,
+                    'translations' => [
+                        $languageId => ['name' => $translated['name']]
+                    ]
+                ]
+            ], $context);
+        }
+
+        // Update slot translations
+        $slotUpdates = [];
+        foreach ($translated as $key => $value) {
+            if (str_starts_with($key, 'slot_')) {
+                // Parse key: slot_0_content -> index=0, field=content
+                preg_match('/slot_(\d+)_(.+)/', $key, $matches);
+                if (count($matches) === 3) {
+                    $slotIndex = (int) $matches[1];
+                    $field = $matches[2];
+
+                    if (isset($slotMapping[$slotIndex])) {
+                        $slotId = $slotMapping[$slotIndex]['slotId'];
+                        $config = $slotMapping[$slotIndex]['config'];
+
+                        // Update the config value
+                        if (isset($config[$field])) {
+                            $config[$field]['value'] = $value;
+
+                            if (!isset($slotUpdates[$slotId])) {
+                                $slotUpdates[$slotId] = $config;
+                            } else {
+                                $slotUpdates[$slotId][$field] = $config[$field];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Save slot updates
+        foreach ($slotUpdates as $slotId => $newConfig) {
+            $this->cmsSlotRepository->update([
+                [
+                    'id' => $slotId,
+                    'translations' => [
+                        $languageId => ['config' => $newConfig]
+                    ]
+                ]
+            ], $context);
+        }
+    }
+
+    // ========================================
+    // SNIPPET TRANSLATION
+    // ========================================
+
+    public function translateSnippetSet(string $sourceSetId, string $targetSetId, ?array $snippetIds, Context $context): array
+    {
+        // Get target set info for language detection
+        $targetSet = $this->snippetSetRepository->search(new Criteria([$targetSetId]), $context)->first();
+        if (!$targetSet) {
+            throw new \RuntimeException('Target snippet set not found: ' . $targetSetId);
+        }
+
+        $targetIso = $targetSet->getIso();
+        $targetLanguageId = $this->getLanguageIdByIso($targetIso, $context);
+        $systemPrompt = $targetLanguageId
+            ? $this->getSystemPromptForLanguage($targetLanguageId, $context)
+            : $this->getDefaultSystemPrompt();
+
+        // Get source snippets
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('setId', $sourceSetId));
+
+        if (!empty($snippetIds)) {
+            $criteria->setIds($snippetIds);
+        }
+
+        $sourceSnippets = $this->snippetRepository->search($criteria, $context)->getEntities();
+
+        if ($sourceSnippets->count() === 0) {
+            return ['success' => true, 'message' => 'No snippets found in source set'];
+        }
+
+        // Batch translate all snippets
+        $textsToTranslate = [];
+        $snippetKeyMap = [];
+
+        foreach ($sourceSnippets as $snippet) {
+            $value = $snippet->getValue();
+            if (!empty($value)) {
+                $key = $snippet->getTranslationKey();
+                $textsToTranslate[$key] = $value;
+                $snippetKeyMap[$key] = $snippet;
+            }
+        }
+
+        if (empty($textsToTranslate)) {
+            return ['success' => true, 'message' => 'No translatable content found'];
+        }
+
+        try {
+            $translatedTexts = $this->anthropicClient->translateBatch($textsToTranslate, $targetIso, $systemPrompt);
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Translation failed: ' . $e->getMessage());
+        }
+
+        // Save translated snippets
+        $successCount = 0;
+        $errorCount = 0;
+        $results = [];
+
+        foreach ($translatedTexts as $key => $translatedValue) {
+            try {
+                $this->saveOrUpdateSnippet($key, $translatedValue, $targetSetId, $context);
+                $results[$key] = ['success' => true];
+                $successCount++;
+            } catch (\Exception $e) {
+                $results[$key] = ['success' => false, 'error' => $e->getMessage()];
+                $errorCount++;
+            }
+        }
+
+        return [
+            'success' => true,
+            'translated' => $successCount,
+            'errors' => $errorCount,
+            'total' => count($textsToTranslate),
+            'details' => $results,
+        ];
+    }
+
+    public function translateSingleSnippet(string $snippetId, string $targetSetId, Context $context): array
+    {
+        $snippet = $this->snippetRepository->search(new Criteria([$snippetId]), $context)->first();
 
         if (!$snippet) {
             throw new \RuntimeException('Snippet not found: ' . $snippetId);
         }
 
-        $content = $this->contentExtractor->extractSnippetContent($snippet);
-        if (empty($content)) {
-            return ['success' => true, 'message' => 'No translatable content found'];
+        $value = $snippet->getValue();
+        if (empty($value)) {
+            return ['success' => true, 'message' => 'Snippet has no value'];
         }
 
-        $language = $this->getLanguage($targetLanguageId, $context);
-        $languageCode = $language->getLocale()?->getCode() ?? 'en-GB';
-        $systemPrompt = $this->getSystemPromptForLanguage($targetLanguageId, $context);
+        // Get target set info
+        $targetSet = $this->snippetSetRepository->search(new Criteria([$targetSetId]), $context)->first();
+        if (!$targetSet) {
+            throw new \RuntimeException('Target snippet set not found: ' . $targetSetId);
+        }
+
+        $targetIso = $targetSet->getIso();
+        $targetLanguageId = $this->getLanguageIdByIso($targetIso, $context);
+        $systemPrompt = $targetLanguageId
+            ? $this->getSystemPromptForLanguage($targetLanguageId, $context)
+            : $this->getDefaultSystemPrompt();
 
         try {
-            $translated = $this->anthropicClient->translateBatch($content, $languageCode, $systemPrompt);
-            
-            // Create new snippet for target language
-            $this->createTranslatedSnippet($snippet, $targetLanguageId, $translated['value'], $context);
-            
-            return ['success' => true, 'language' => $languageCode];
+            $translated = $this->anthropicClient->translate($value, $targetIso, $systemPrompt);
+            $this->saveOrUpdateSnippet($snippet->getTranslationKey(), $translated, $targetSetId, $context);
+
+            return [
+                'success' => true,
+                'translationKey' => $snippet->getTranslationKey(),
+                'targetIso' => $targetIso,
+            ];
         } catch (\Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
+            throw new \RuntimeException('Translation failed: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Get available languages for translation (excluding source language)
-     */
+    private function saveOrUpdateSnippet(string $translationKey, string $value, string $setId, Context $context): void
+    {
+        // Check if snippet already exists in target set
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('translationKey', $translationKey));
+        $criteria->addFilter(new EqualsFilter('setId', $setId));
+
+        $existing = $this->snippetRepository->search($criteria, $context)->first();
+
+        if ($existing) {
+            // Update existing
+            $this->snippetRepository->update([
+                [
+                    'id' => $existing->getId(),
+                    'value' => $value,
+                ]
+            ], $context);
+        } else {
+            // Create new
+            $this->snippetRepository->create([
+                [
+                    'id' => Uuid::randomHex(),
+                    'translationKey' => $translationKey,
+                    'value' => $value,
+                    'setId' => $setId,
+                    'author' => 'VivaturaTranslator',
+                ]
+            ], $context);
+        }
+    }
+
+    private function getLanguageIdByIso(string $iso, Context $context): ?string
+    {
+        $criteria = new Criteria();
+        $criteria->addAssociation('locale');
+
+        $languages = $this->languageRepository->search($criteria, $context);
+
+        foreach ($languages as $language) {
+            if ($language->getLocale()?->getCode() === $iso) {
+                return $language->getId();
+            }
+        }
+
+        return null;
+    }
+
+    // ========================================
+    // HELPER METHODS
+    // ========================================
+
     public function getAvailableLanguages(Context $context): array
     {
         $sourceLanguageCode = $this->systemConfigService->get('VivaturaTranslator.config.sourceLanguage') ?? 'de-DE';
@@ -179,12 +393,8 @@ class TranslationService
         return $result;
     }
 
-    /**
-     * Get system prompt for a specific language (with fallback to global)
-     */
     private function getSystemPromptForLanguage(string $languageId, Context $context): string
     {
-        // Check if repository is available (might be null if migration hasn't run)
         if ($this->languagePromptRepository !== null) {
             $criteria = new Criteria();
             $criteria->addFilter(new EqualsFilter('languageId', $languageId));
@@ -197,9 +407,13 @@ class TranslationService
             }
         }
 
-        // Fallback to global prompt
+        return $this->getDefaultSystemPrompt();
+    }
+
+    private function getDefaultSystemPrompt(): string
+    {
         return $this->systemConfigService->get('VivaturaTranslator.config.globalSystemPrompt')
-            ?? 'Du bist ein professioneller Übersetzer für E-Commerce Inhalte. Übersetze präzise und behalte den Ton und Stil des Originals bei.';
+            ?? 'Du bist ein professioneller Übersetzer für E-Commerce Inhalte. Übersetze präzise und behalte den Ton und Stil des Originals bei. Gib nur die Übersetzung zurück, keine Erklärungen.';
     }
 
     private function getLanguage(string $languageId, Context $context)
@@ -247,60 +461,5 @@ class TranslationService
         }
 
         return $payload;
-    }
-
-    private function saveCmsPageTranslation(string $pageId, $page, string $languageId, array $translated, Context $context): void
-    {
-        // Update page name if translated
-        if (isset($translated['name'])) {
-            $this->cmsPageRepository->update([
-                [
-                    'id' => $pageId,
-                    'translations' => [
-                        $languageId => ['name' => $translated['name']]
-                    ]
-                ]
-            ], $context);
-        }
-
-        // Note: Slot translations require more complex logic due to CMS structure
-        // This is a simplified version - full implementation would update slot configs
-    }
-
-    private function createTranslatedSnippet($sourceSnippet, string $targetLanguageId, string $translatedValue, Context $context): void
-    {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('translationKey', $sourceSnippet->getTranslationKey()));
-        $criteria->addFilter(new EqualsFilter('setId', $this->getSnippetSetForLanguage($targetLanguageId, $context)));
-
-        $existing = $this->snippetRepository->search($criteria, $context)->first();
-
-        if ($existing) {
-            // Update existing
-            $this->snippetRepository->update([
-                [
-                    'id' => $existing->getId(),
-                    'value' => $translatedValue
-                ]
-            ], $context);
-        } else {
-            // Create new
-            $this->snippetRepository->create([
-                [
-                    'id' => Uuid::randomHex(),
-                    'translationKey' => $sourceSnippet->getTranslationKey(),
-                    'value' => $translatedValue,
-                    'setId' => $this->getSnippetSetForLanguage($targetLanguageId, $context),
-                    'author' => 'VivaturaTranslator',
-                ]
-            ], $context);
-        }
-    }
-
-    private function getSnippetSetForLanguage(string $languageId, Context $context): ?string
-    {
-        // This would need to look up the snippet set for the language
-        // Simplified for now - in production you'd query snippet_set table
-        return null;
     }
 }

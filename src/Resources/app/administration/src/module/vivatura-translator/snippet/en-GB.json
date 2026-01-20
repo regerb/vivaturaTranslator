@@ -4,37 +4,76 @@
             "mainMenuItemGeneral": "Vivatura Translator",
             "descriptionTextModule": "AI-powered translations with Anthropic Claude"
         },
+        "dashboard": {
+            "title": "Vivatura Translator - Dashboard",
+            "statusTitle": "Overview",
+            "languages": "Target Languages",
+            "products": "Products",
+            "cmsPages": "CMS Pages",
+            "snippetSets": "Snippet Sets",
+            "selectLanguages": "Select target languages",
+            "tabProducts": "Products",
+            "tabCmsPages": "CMS Pages",
+            "tabSnippets": "Snippets",
+            "tabSettings": "Settings",
+            "searchProducts": "Search products...",
+            "searchCmsPages": "Search CMS pages...",
+            "searchSnippets": "Search snippets...",
+            "translateSelected": "Translate selected",
+            "translateSelectedSnippets": "Translate {count} snippet(s)",
+            "translateAllSnippets": "Translate all snippets",
+            "selected": "selected",
+            "productNumber": "Product number",
+            "name": "Name",
+            "translations": "Translations",
+            "type": "Type",
+            "slots": "Slots",
+            "sourceSnippetSet": "Select source snippet set",
+            "targetSnippetSet": "Select target snippet set",
+            "selectSourceSet": "Please select a source snippet set first to display the snippets.",
+            "translationKey": "Translation key",
+            "value": "Value",
+            "author": "Author",
+            "snippetHint": "Empty = translate all snippets"
+        },
         "button": {
             "translate": "Translate with AI"
         },
         "modal": {
-            "title": "Start Translation",
+            "title": "Start translation",
             "selectLanguages": "Select target languages",
             "selectAll": "Select all",
             "deselectAll": "Deselect all",
-            "startTranslation": "Start Translation",
+            "startTranslation": "Start translation",
             "translating": "Translating...",
+            "pleaseWait": "Please wait, the translation is being processed...",
             "results": "Results",
+            "completed": "Completed",
+            "successful": "successful",
+            "failed": "failed",
             "fieldsTranslated": "fields translated",
             "close": "Close"
         },
         "notification": {
             "successTitle": "Success",
             "errorTitle": "Error",
-            "warningTitle": "Warning",
+            "warningTitle": "Notice",
             "translationComplete": "Translation completed successfully",
             "loadLanguagesError": "Failed to load languages",
-            "noLanguagesSelected": "Please select at least one target language"
+            "noLanguagesSelected": "Please select at least one target language",
+            "productsTranslated": "{count} product(s) translated, {errors} errors",
+            "cmsPagesTranslated": "{count} CMS page(s) translated, {errors} errors",
+            "snippetsTranslated": "{count} snippet(s) translated, {errors} errors"
         },
         "settings": {
-            "title": "Vivatura Translator Settings",
+            "title": "Language-specific prompts",
             "save": "Save",
-            "infoTitle": "Language-specific Prompts",
-            "infoText": "Configure individual AI translation instructions for each language. These override the global fallback prompt.",
-            "fallbackHint": "If no language-specific prompt is configured, the global System Prompt from the plugin settings will be used.",
-            "languagePromptsTitle": "Prompts per Language",
+            "infoTitle": "Language-specific prompts",
+            "infoText": "Here you can define individual instructions for the AI translation for each language. These override the global fallback prompt from the plugin settings.",
+            "fallbackHint": "If no language-specific prompt is defined, the global system prompt from the plugin settings will be used.",
+            "languagePromptsTitle": "Prompts per language",
             "promptPlaceholder": "Optional language-specific instructions (empty = fallback will be used)",
-            "promptsSaved": "Language settings have been saved"
+            "promptsSaved": "Language settings saved"
         }
     }
 }

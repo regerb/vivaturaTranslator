@@ -1,8 +1,5 @@
 // VivaturaTranslator Administration Entry Point
 import './module/vivatura-translator';
-import './extension/sw-product-detail';
-import './extension/sw-cms-detail';
-import './component/vivatura-translator-button';
 
 // Import and register snippets globally
 import deDE from './module/vivatura-translator/snippet/de-DE.json';
