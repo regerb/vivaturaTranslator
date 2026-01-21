@@ -1,4 +1,4 @@
-# VivaturaTranslator - Shopware 6 AI Translation Plugin
+# vivaturaTranslator - Shopware 6 AI Translation Plugin
 
 KI-gestützte Übersetzungen für Produkte, CMS-Seiten und Snippets mit Anthropic Claude.
 
