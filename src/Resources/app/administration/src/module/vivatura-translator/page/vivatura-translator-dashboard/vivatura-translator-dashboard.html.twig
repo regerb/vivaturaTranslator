@@ -67,17 +67,17 @@
 
             {# Tabs #}
             {% block vivatura_translator_tabs %}
-            <sw-tabs :small="false" @new-item-active="onTabChange">
-                <sw-tabs-item name="products" :activeTab="activeTab">
+            <sw-tabs :small="false" :default-item="activeTab" @new-item-active="onTabChange">
+                <sw-tabs-item name="products">
                     {{ $tc('vivatura-translator.dashboard.tabProducts') }}
                 </sw-tabs-item>
-                <sw-tabs-item name="cms" :activeTab="activeTab">
+                <sw-tabs-item name="cms">
                     {{ $tc('vivatura-translator.dashboard.tabCmsPages') }}
                 </sw-tabs-item>
-                <sw-tabs-item name="snippets" :activeTab="activeTab">
+                <sw-tabs-item name="snippets">
                     {{ $tc('vivatura-translator.dashboard.tabSnippets') }}
                 </sw-tabs-item>
-                <sw-tabs-item name="settings" :activeTab="activeTab">
+                <sw-tabs-item name="settings">
                     {{ $tc('vivatura-translator.dashboard.tabSettings') }}
                 </sw-tabs-item>
             </sw-tabs>
