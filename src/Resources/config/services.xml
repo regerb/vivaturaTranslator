@@ -35,6 +35,10 @@
             <argument type="service" id="cms_page.repository"/>
             <argument type="service" id="snippet_set.repository"/>
             <argument type="service" id="snippet.repository"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+            <tag name="controller.service_arguments"/>
         </service>
 
         <!-- Language Prompt Entity Definition -->
