@@ -264,7 +264,7 @@
                     {{ $tc('vivatura-translator.dashboard.selectSourceSet') }}
                 </sw-alert>
 
-                <template v-if="sourceSnippetSet">
+                <div v-if="sourceSnippetSet">
                     <sw-simple-search-field
                         v-model="snippetSearch"
                         @search-term-change="onSnippetSearch"
@@ -291,22 +291,22 @@
                             />
                         </template>
                     </sw-data-grid>
+                </div>
 
-                    <template #footer>
-                        <sw-pagination
-                            :total="snippetTotal"
-                            :limit="snippetLimit"
-                            :page="snippetPage"
-                            @page-change="onSnippetPageChange"
-                        />
-                        <div class="selection-info">
-                            <sw-button size="small" @click="toggleAllSnippets">
-                                {{ allSnippetsSelected ? $tc('vivatura-translator.modal.deselectAll') : $tc('vivatura-translator.modal.selectAll') }}
-                            </sw-button>
-                            <span>{{ selectedSnippets.length }} {{ $tc('vivatura-translator.dashboard.selected') }}</span>
-                            <span class="hint">{{ $tc('vivatura-translator.dashboard.snippetHint') }}</span>
-                        </div>
-                    </template>
+                <template #footer v-if="sourceSnippetSet">
+                    <sw-pagination
+                        :total="snippetTotal"
+                        :limit="snippetLimit"
+                        :page="snippetPage"
+                        @page-change="onSnippetPageChange"
+                    />
+                    <div class="selection-info">
+                        <sw-button size="small" @click="toggleAllSnippets">
+                            {{ allSnippetsSelected ? $tc('vivatura-translator.modal.deselectAll') : $tc('vivatura-translator.modal.selectAll') }}
+                        </sw-button>
+                        <span>{{ selectedSnippets.length }} {{ $tc('vivatura-translator.dashboard.selected') }}</span>
+                        <span class="hint">{{ $tc('vivatura-translator.dashboard.snippetHint') }}</span>
+                    </div>
                 </template>
             </sw-card>
             {% endblock %}
