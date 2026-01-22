@@ -33,7 +33,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/languages',
         name: 'api.action.vivatura_translator.languages',
-        defaults: ['_acl' => ['language:read']],
+        defaults: ['_acl' => []],
         methods: ['GET']
     )]
     public function getLanguages(Context $context): JsonResponse
@@ -49,7 +49,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/products',
         name: 'api.action.vivatura_translator.products',
-        defaults: ['_acl' => ['product:read']],
+        defaults: ['_acl' => []],
         methods: ['GET']
     )]
     public function getProducts(Request $request, Context $context): JsonResponse
@@ -93,7 +93,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/translate-product/{productId}',
         name: 'api.action.vivatura_translator.translate_product',
-        defaults: ['_acl' => ['product:update']],
+        defaults: ['_acl' => []],
         methods: ['POST']
     )]
     public function translateProduct(string $productId, Request $request, Context $context): JsonResponse
@@ -116,7 +116,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/translate-products',
         name: 'api.action.vivatura_translator.translate_products',
-        defaults: ['_acl' => ['product:update']],
+        defaults: ['_acl' => []],
         methods: ['POST']
     )]
     public function translateProducts(Request $request, Context $context): JsonResponse
@@ -165,7 +165,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/cms-pages',
         name: 'api.action.vivatura_translator.cms_pages',
-        defaults: ['_acl' => ['cms_page:read']],
+        defaults: ['_acl' => []],
         methods: ['GET']
     )]
     public function getCmsPages(Request $request, Context $context): JsonResponse
@@ -225,7 +225,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/translate-cms-page/{pageId}',
         name: 'api.action.vivatura_translator.translate_cms_page',
-        defaults: ['_acl' => ['cms_page:update']],
+        defaults: ['_acl' => []],
         methods: ['POST']
     )]
     public function translateCmsPage(string $pageId, Request $request, Context $context): JsonResponse
@@ -248,7 +248,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/translate-cms-pages',
         name: 'api.action.vivatura_translator.translate_cms_pages',
-        defaults: ['_acl' => ['cms_page:update']],
+        defaults: ['_acl' => []],
         methods: ['POST']
     )]
     public function translateCmsPages(Request $request, Context $context): JsonResponse
@@ -297,7 +297,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/snippet-sets',
         name: 'api.action.vivatura_translator.snippet_sets',
-        defaults: ['_acl' => ['snippet:read']],
+        defaults: ['_acl' => []],
         methods: ['GET']
     )]
     public function getSnippetSets(Context $context): JsonResponse
@@ -324,7 +324,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/snippets',
         name: 'api.action.vivatura_translator.snippets',
-        defaults: ['_acl' => ['snippet:read']],
+        defaults: ['_acl' => []],
         methods: ['GET']
     )]
     public function getSnippets(Request $request, Context $context): JsonResponse
@@ -371,7 +371,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/translate-snippet-set',
         name: 'api.action.vivatura_translator.translate_snippet_set',
-        defaults: ['_acl' => ['snippet:update']],
+        defaults: ['_acl' => []],
         methods: ['POST']
     )]
     public function translateSnippetSet(Request $request, Context $context): JsonResponse
@@ -396,7 +396,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/translate-snippet/{snippetId}',
         name: 'api.action.vivatura_translator.translate_snippet',
-        defaults: ['_acl' => ['snippet:update']],
+        defaults: ['_acl' => []],
         methods: ['POST']
     )]
     public function translateSnippet(string $snippetId, Request $request, Context $context): JsonResponse
@@ -423,7 +423,7 @@ class TranslationController extends AbstractController
     #[Route(
         path: '/api/_action/vivatura-translator/translation-status',
         name: 'api.action.vivatura_translator.translation_status',
-        defaults: ['_acl' => ['product:read']],
+        defaults: ['_acl' => []],
         methods: ['GET']
     )]
     public function getTranslationStatus(Context $context): JsonResponse
