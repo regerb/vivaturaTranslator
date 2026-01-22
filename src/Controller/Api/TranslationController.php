@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Vivatura\VivaturaTranslator\Service\TranslationService;
 
-#[Route(defaults: ['_routeScope' => ['api']])]
+#[Route(defaults: ['_routeScope' => ['api'], '_acl' => []])]
 class TranslationController extends AbstractController
 {
     public function __construct(
