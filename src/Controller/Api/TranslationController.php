@@ -31,7 +31,7 @@ class TranslationController extends AbstractController
     // ========================================
 
     #[Route(
-        path: '/_action/vivatura-translator/languages',
+        path: '/api/_action/vivatura-translator/languages',
         name: 'api.action.vivatura_translator.languages',
         defaults: ['_acl' => []],
         methods: ['GET']
@@ -47,7 +47,7 @@ class TranslationController extends AbstractController
     // ========================================
 
     #[Route(
-        path: '/_action/vivatura-translator/products',
+        path: '/api/_action/vivatura-translator/products',
         name: 'api.action.vivatura_translator.products',
         defaults: ['_acl' => []],
         methods: ['GET']
@@ -91,7 +91,7 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/_action/vivatura-translator/translate-product/{productId}',
+        path: '/api/_action/vivatura-translator/translate-product/{productId}',
         name: 'api.action.vivatura_translator.translate_product',
         defaults: ['_acl' => []],
         methods: ['POST']
@@ -114,7 +114,7 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/_action/vivatura-translator/translate-products',
+        path: '/api/_action/vivatura-translator/translate-products',
         name: 'api.action.vivatura_translator.translate_products',
         defaults: ['_acl' => []],
         methods: ['POST']
@@ -163,7 +163,7 @@ class TranslationController extends AbstractController
     // ========================================
 
     #[Route(
-        path: '/_action/vivatura-translator/cms-pages',
+        path: '/api/_action/vivatura-translator/cms-pages',
         name: 'api.action.vivatura_translator.cms_pages',
         defaults: ['_acl' => []],
         methods: ['GET']
@@ -223,7 +223,7 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/_action/vivatura-translator/translate-cms-page/{pageId}',
+        path: '/api/_action/vivatura-translator/translate-cms-page/{pageId}',
         name: 'api.action.vivatura_translator.translate_cms_page',
         defaults: ['_acl' => []],
         methods: ['POST']
@@ -246,7 +246,7 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/_action/vivatura-translator/translate-cms-pages',
+        path: '/api/_action/vivatura-translator/translate-cms-pages',
         name: 'api.action.vivatura_translator.translate_cms_pages',
         defaults: ['_acl' => []],
         methods: ['POST']
@@ -295,7 +295,7 @@ class TranslationController extends AbstractController
     // ========================================
 
     #[Route(
-        path: '/_action/vivatura-translator/snippet-sets',
+        path: '/api/_action/vivatura-translator/snippet-sets',
         name: 'api.action.vivatura_translator.snippet_sets',
         defaults: ['_acl' => []],
         methods: ['GET']
@@ -322,7 +322,7 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/_action/vivatura-translator/snippets',
+        path: '/api/_action/vivatura-translator/snippets',
         name: 'api.action.vivatura_translator.snippets',
         defaults: ['_acl' => []],
         methods: ['GET']
@@ -369,7 +369,7 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/_action/vivatura-translator/translate-snippet-set',
+        path: '/api/_action/vivatura-translator/translate-snippet-set',
         name: 'api.action.vivatura_translator.translate_snippet_set',
         defaults: ['_acl' => []],
         methods: ['POST']
@@ -394,7 +394,7 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/_action/vivatura-translator/translate-snippet/{snippetId}',
+        path: '/api/_action/vivatura-translator/translate-snippet/{snippetId}',
         name: 'api.action.vivatura_translator.translate_snippet',
         defaults: ['_acl' => []],
         methods: ['POST']
@@ -421,7 +421,7 @@ class TranslationController extends AbstractController
     // ========================================
 
     #[Route(
-        path: '/_action/vivatura-translator/translation-status',
+        path: '/api/_action/vivatura-translator/translation-status',
         name: 'api.action.vivatura_translator.translation_status',
         defaults: ['_acl' => []],
         methods: ['GET']

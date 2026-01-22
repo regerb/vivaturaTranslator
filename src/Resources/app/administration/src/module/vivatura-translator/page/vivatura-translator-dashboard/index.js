@@ -6,7 +6,7 @@ const { Component, Mixin } = Shopware;
 Component.register('vivatura-translator-dashboard', {
     template,
 
-    inject: ['repositoryFactory'],
+    inject: ['repositoryFactory', 'loginService'],
 
     mixins: [
         Mixin.getByName('notification')
@@ -68,8 +68,14 @@ Component.register('vivatura-translator-dashboard', {
 
     computed: {
         httpClient() {
-            const initContainer = Shopware.Application.getContainer('init');
-            return initContainer.httpClient;
+            return Shopware.Application.getContainer('init').httpClient;
+        },
+
+        authHeaders() {
+            return {
+                Authorization: `Bearer ${this.loginService.getToken()}`,
+                'Content-Type': 'application/json'
+            };
         },
 
         languageRepository() {
@@ -131,12 +137,12 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         async loadStatus() {
-            const response = await this.httpClient.get('/_action/vivatura-translator/translation-status');
+            const response = await this.httpClient.get('/_action/vivatura-translator/translation-status', { headers: this.authHeaders });
             this.status = response.data;
         },
 
         async loadLanguages() {
-            const response = await this.httpClient.get('/_action/vivatura-translator/languages');
+            const response = await this.httpClient.get('/_action/vivatura-translator/languages', { headers: this.authHeaders });
             this.availableLanguages = response.data.languages || [];
         },
 
@@ -152,7 +158,7 @@ Component.register('vivatura-translator-dashboard', {
                     limit: this.productLimit,
                     search: this.productSearch
                 });
-                const response = await this.httpClient.get(`/_action/vivatura-translator/products?${params}`);
+                const response = await this.httpClient.get(`/_action/vivatura-translator/products?${params}`, { headers: this.authHeaders });
                 this.products = response.data.products || [];
                 this.productTotal = response.data.total || 0;
             } finally {
@@ -197,7 +203,7 @@ Component.register('vivatura-translator-dashboard', {
                 const response = await this.httpClient.post('/_action/vivatura-translator/translate-products', {
                     productIds: this.selectedProducts,
                     targetLanguageIds: this.selectedLanguages
-                });
+                }, { headers: this.authHeaders });
 
                 this.translationResults = response.data;
                 this.translationProgress = 100;
@@ -232,7 +238,7 @@ Component.register('vivatura-translator-dashboard', {
                     limit: this.cmsLimit,
                     search: this.cmsSearch
                 });
-                const response = await this.httpClient.get(`/_action/vivatura-translator/cms-pages?${params}`);
+                const response = await this.httpClient.get(`/_action/vivatura-translator/cms-pages?${params}`, { headers: this.authHeaders });
                 this.cmsPages = response.data.pages || [];
                 this.cmsTotal = response.data.total || 0;
             } finally {
@@ -277,7 +283,7 @@ Component.register('vivatura-translator-dashboard', {
                 const response = await this.httpClient.post('/_action/vivatura-translator/translate-cms-pages', {
                     pageIds: this.selectedCmsPages,
                     targetLanguageIds: this.selectedLanguages
-                });
+                }, { headers: this.authHeaders });
 
                 this.translationResults = response.data;
                 this.translationProgress = 100;
@@ -305,7 +311,7 @@ Component.register('vivatura-translator-dashboard', {
         // ========================================
 
         async loadSnippetSets() {
-            const response = await this.httpClient.get('/_action/vivatura-translator/snippet-sets');
+            const response = await this.httpClient.get('/_action/vivatura-translator/snippet-sets', { headers: this.authHeaders });
             this.snippetSets = response.data.snippetSets || [];
         },
 
@@ -328,7 +334,7 @@ Component.register('vivatura-translator-dashboard', {
                     limit: this.snippetLimit,
                     search: this.snippetSearch
                 });
-                const response = await this.httpClient.get(`/_action/vivatura-translator/snippets?${params}`);
+                const response = await this.httpClient.get(`/_action/vivatura-translator/snippets?${params}`, { headers: this.authHeaders });
                 this.snippets = response.data.snippets || [];
                 this.snippetTotal = response.data.total || 0;
             } finally {
@@ -380,7 +386,7 @@ Component.register('vivatura-translator-dashboard', {
                     payload.snippetIds = this.selectedSnippets;
                 }
 
-                const response = await this.httpClient.post('/_action/vivatura-translator/translate-snippet-set', payload);
+                const response = await this.httpClient.post('/_action/vivatura-translator/translate-snippet-set', payload, { headers: this.authHeaders });
 
                 this.translationResults = response.data;
                 this.translationProgress = 100;
