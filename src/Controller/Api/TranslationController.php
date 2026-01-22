@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Vivatura\VivaturaTranslator\Service\TranslationService;
 
-#[Route(defaults: ['_routeScope' => ['api'], '_acl' => []])]
+#[Route(defaults: ['_routeScope' => ['api']])]
 class TranslationController extends AbstractController
 {
     public function __construct(
@@ -31,8 +31,8 @@ class TranslationController extends AbstractController
     // ========================================
 
     #[Route(
-        path: '/api/vivatura-translator/languages',
-        name: 'api.vivatura_translator.languages',
+        path: '/api/_action/vivatura-translator/languages',
+        name: 'api.action.vivatura_translator.languages',
         methods: ['GET']
     )]
     public function getLanguages(Context $context): JsonResponse
@@ -46,8 +46,8 @@ class TranslationController extends AbstractController
     // ========================================
 
     #[Route(
-        path: '/api/vivatura-translator/products',
-        name: 'api.vivatura_translator.products',
+        path: '/api/_action/vivatura-translator/products',
+        name: 'api.action.vivatura_translator.products',
         methods: ['GET']
     )]
     public function getProducts(Request $request, Context $context): JsonResponse
@@ -89,8 +89,8 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/api/vivatura-translator/translate-product/{productId}',
-        name: 'api.vivatura_translator.translate_product',
+        path: '/api/_action/vivatura-translator/translate-product/{productId}',
+        name: 'api.action.vivatura_translator.translate_product',
         methods: ['POST']
     )]
     public function translateProduct(string $productId, Request $request, Context $context): JsonResponse
@@ -111,8 +111,8 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/api/vivatura-translator/translate-products',
-        name: 'api.vivatura_translator.translate_products',
+        path: '/api/_action/vivatura-translator/translate-products',
+        name: 'api.action.vivatura_translator.translate_products',
         methods: ['POST']
     )]
     public function translateProducts(Request $request, Context $context): JsonResponse
@@ -159,8 +159,8 @@ class TranslationController extends AbstractController
     // ========================================
 
     #[Route(
-        path: '/api/vivatura-translator/cms-pages',
-        name: 'api.vivatura_translator.cms_pages',
+        path: '/api/_action/vivatura-translator/cms-pages',
+        name: 'api.action.vivatura_translator.cms_pages',
         methods: ['GET']
     )]
     public function getCmsPages(Request $request, Context $context): JsonResponse
@@ -218,8 +218,8 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/api/vivatura-translator/translate-cms-page/{pageId}',
-        name: 'api.vivatura_translator.translate_cms_page',
+        path: '/api/_action/vivatura-translator/translate-cms-page/{pageId}',
+        name: 'api.action.vivatura_translator.translate_cms_page',
         methods: ['POST']
     )]
     public function translateCmsPage(string $pageId, Request $request, Context $context): JsonResponse
@@ -240,8 +240,8 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/api/vivatura-translator/translate-cms-pages',
-        name: 'api.vivatura_translator.translate_cms_pages',
+        path: '/api/_action/vivatura-translator/translate-cms-pages',
+        name: 'api.action.vivatura_translator.translate_cms_pages',
         methods: ['POST']
     )]
     public function translateCmsPages(Request $request, Context $context): JsonResponse
@@ -288,8 +288,8 @@ class TranslationController extends AbstractController
     // ========================================
 
     #[Route(
-        path: '/api/vivatura-translator/snippet-sets',
-        name: 'api.vivatura_translator.snippet_sets',
+        path: '/api/_action/vivatura-translator/snippet-sets',
+        name: 'api.action.vivatura_translator.snippet_sets',
         methods: ['GET']
     )]
     public function getSnippetSets(Context $context): JsonResponse
@@ -314,8 +314,8 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/api/vivatura-translator/snippets',
-        name: 'api.vivatura_translator.snippets',
+        path: '/api/_action/vivatura-translator/snippets',
+        name: 'api.action.vivatura_translator.snippets',
         methods: ['GET']
     )]
     public function getSnippets(Request $request, Context $context): JsonResponse
@@ -360,8 +360,8 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/api/vivatura-translator/translate-snippet-set',
-        name: 'api.vivatura_translator.translate_snippet_set',
+        path: '/api/_action/vivatura-translator/translate-snippet-set',
+        name: 'api.action.vivatura_translator.translate_snippet_set',
         methods: ['POST']
     )]
     public function translateSnippetSet(Request $request, Context $context): JsonResponse
@@ -384,8 +384,8 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
-        path: '/api/vivatura-translator/translate-snippet/{snippetId}',
-        name: 'api.vivatura_translator.translate_snippet',
+        path: '/api/_action/vivatura-translator/translate-snippet/{snippetId}',
+        name: 'api.action.vivatura_translator.translate_snippet',
         methods: ['POST']
     )]
     public function translateSnippet(string $snippetId, Request $request, Context $context): JsonResponse
@@ -410,8 +410,8 @@ class TranslationController extends AbstractController
     // ========================================
 
     #[Route(
-        path: '/api/vivatura-translator/translation-status',
-        name: 'api.vivatura_translator.translation_status',
+        path: '/api/_action/vivatura-translator/translation-status',
+        name: 'api.action.vivatura_translator.translation_status',
         methods: ['GET']
     )]
     public function getTranslationStatus(Context $context): JsonResponse

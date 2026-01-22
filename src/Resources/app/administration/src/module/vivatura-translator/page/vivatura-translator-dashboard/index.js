@@ -131,12 +131,12 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         async loadStatus() {
-            const response = await this.httpClient.get('/vivatura-translator/translation-status');
+            const response = await this.httpClient.get('/_action/vivatura-translator/translation-status');
             this.status = response.data;
         },
 
         async loadLanguages() {
-            const response = await this.httpClient.get('/vivatura-translator/languages');
+            const response = await this.httpClient.get('/_action/vivatura-translator/languages');
             this.availableLanguages = response.data.languages || [];
         },
 
@@ -152,7 +152,7 @@ Component.register('vivatura-translator-dashboard', {
                     limit: this.productLimit,
                     search: this.productSearch
                 });
-                const response = await this.httpClient.get(`/vivatura-translator/products?${params}`);
+                const response = await this.httpClient.get(`/_action/vivatura-translator/products?${params}`);
                 this.products = response.data.products || [];
                 this.productTotal = response.data.total || 0;
             } finally {
@@ -194,7 +194,7 @@ Component.register('vivatura-translator-dashboard', {
             this.translationProgress = 0;
 
             try {
-                const response = await this.httpClient.post('/vivatura-translator/translate-products', {
+                const response = await this.httpClient.post('/_action/vivatura-translator/translate-products', {
                     productIds: this.selectedProducts,
                     targetLanguageIds: this.selectedLanguages
                 });
@@ -232,7 +232,7 @@ Component.register('vivatura-translator-dashboard', {
                     limit: this.cmsLimit,
                     search: this.cmsSearch
                 });
-                const response = await this.httpClient.get(`/vivatura-translator/cms-pages?${params}`);
+                const response = await this.httpClient.get(`/_action/vivatura-translator/cms-pages?${params}`);
                 this.cmsPages = response.data.pages || [];
                 this.cmsTotal = response.data.total || 0;
             } finally {
@@ -274,7 +274,7 @@ Component.register('vivatura-translator-dashboard', {
             this.translationProgress = 0;
 
             try {
-                const response = await this.httpClient.post('/vivatura-translator/translate-cms-pages', {
+                const response = await this.httpClient.post('/_action/vivatura-translator/translate-cms-pages', {
                     pageIds: this.selectedCmsPages,
                     targetLanguageIds: this.selectedLanguages
                 });
@@ -305,7 +305,7 @@ Component.register('vivatura-translator-dashboard', {
         // ========================================
 
         async loadSnippetSets() {
-            const response = await this.httpClient.get('/vivatura-translator/snippet-sets');
+            const response = await this.httpClient.get('/_action/vivatura-translator/snippet-sets');
             this.snippetSets = response.data.snippetSets || [];
         },
 
@@ -328,7 +328,7 @@ Component.register('vivatura-translator-dashboard', {
                     limit: this.snippetLimit,
                     search: this.snippetSearch
                 });
-                const response = await this.httpClient.get(`/vivatura-translator/snippets?${params}`);
+                const response = await this.httpClient.get(`/_action/vivatura-translator/snippets?${params}`);
                 this.snippets = response.data.snippets || [];
                 this.snippetTotal = response.data.total || 0;
             } finally {
@@ -380,7 +380,7 @@ Component.register('vivatura-translator-dashboard', {
                     payload.snippetIds = this.selectedSnippets;
                 }
 
-                const response = await this.httpClient.post('/vivatura-translator/translate-snippet-set', payload);
+                const response = await this.httpClient.post('/_action/vivatura-translator/translate-snippet-set', payload);
 
                 this.translationResults = response.data;
                 this.translationProgress = 100;
