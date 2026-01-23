@@ -32,9 +32,18 @@ class TranslationService
 
     public function translateProduct(string $productId, array $targetLanguageIds, Context $context): array
     {
+        // Create context with source language to get the source texts
+        $sourceLanguageId = $this->getSourceLanguageId($context);
+        $sourceContext = new Context(
+            $context->getSource(),
+            $context->getRuleIds(),
+            $context->getCurrencyId(),
+            [$sourceLanguageId]
+        );
+
         $criteria = new Criteria([$productId]);
         $criteria->addAssociation('translations');
-        $product = $this->productRepository->search($criteria, $context)->first();
+        $product = $this->productRepository->search($criteria, $sourceContext)->first();
 
         if (!$product) {
             throw new \RuntimeException('Product not found: ' . $productId);
@@ -69,10 +78,19 @@ class TranslationService
 
     public function translateCmsPage(string $pageId, array $targetLanguageIds, Context $context): array
     {
+        // Create context with source language to get the source texts
+        $sourceLanguageId = $this->getSourceLanguageId($context);
+        $sourceContext = new Context(
+            $context->getSource(),
+            $context->getRuleIds(),
+            $context->getCurrencyId(),
+            [$sourceLanguageId]
+        );
+
         $criteria = new Criteria([$pageId]);
         $criteria->addAssociation('sections.blocks.slots');
         $criteria->addAssociation('translations');
-        $page = $this->cmsPageRepository->search($criteria, $context)->first();
+        $page = $this->cmsPageRepository->search($criteria, $sourceContext)->first();
 
         if (!$page) {
             throw new \RuntimeException('CMS page not found: ' . $pageId);
@@ -421,6 +439,25 @@ class TranslationService
         $criteria = new Criteria([$languageId]);
         $criteria->addAssociation('locale');
         return $this->languageRepository->search($criteria, $context)->first();
+    }
+
+    private function getSourceLanguageId(Context $context): string
+    {
+        $sourceLanguageCode = $this->systemConfigService->get('VivaturaTranslator.config.sourceLanguage') ?? 'de-DE';
+
+        $criteria = new Criteria();
+        $criteria->addAssociation('locale');
+
+        $languages = $this->languageRepository->search($criteria, $context);
+
+        foreach ($languages as $language) {
+            if ($language->getLocale()?->getCode() === $sourceLanguageCode) {
+                return $language->getId();
+            }
+        }
+
+        // Fallback to system default language
+        return $context->getLanguageId();
     }
 
     private function saveProductTranslation(string $productId, string $languageId, array $translated, Context $context): void
