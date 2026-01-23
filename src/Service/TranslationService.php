@@ -439,6 +439,11 @@ class TranslationService
         return null;
     }
 
+    public function getAvailableModels(): array
+    {
+        return $this->anthropicClient->getAvailableModels();
+    }
+
     // ========================================
     // HELPER METHODS
     // ========================================

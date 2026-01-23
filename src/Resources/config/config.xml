@@ -21,8 +21,13 @@
             <options>
                 <option>
                     <id>claude-3-5-sonnet-20241022</id>
-                    <name>Claude 3.5 Sonnet (Empfohlen - Beste Balance)</name>
-                    <name lang="en-GB">Claude 3.5 Sonnet (Recommended - Best Balance)</name>
+                    <name>Claude 3.5 Sonnet (Latest - 20241022)</name>
+                    <name lang="en-GB">Claude 3.5 Sonnet (Latest - 20241022)</name>
+                </option>
+                <option>
+                    <id>claude-3-5-sonnet-20240620</id>
+                    <name>Claude 3.5 Sonnet (Legacy - 20240620)</name>
+                    <name lang="en-GB">Claude 3.5 Sonnet (Legacy - 20240620)</name>
                 </option>
                 <option>
                     <id>claude-3-5-haiku-20241022</id>

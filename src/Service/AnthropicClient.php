@@ -40,10 +40,11 @@ class AnthropicClient
         }
 
         $userPrompt = $this->buildUserPrompt($text, $targetLanguage);
-        
+        $maxTokens = $this->getMaxTokens($model);
+
         $payload = [
             'model' => $model,
-            'max_tokens' => 4096,
+            'max_tokens' => $maxTokens,
             'system' => $systemPrompt,
             'messages' => [
                 [
@@ -77,9 +78,9 @@ class AnthropicClient
 
         // Build batch request with JSON structure for easy parsing
         $jsonInput = json_encode($texts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        
+
         $userPrompt = <<<PROMPT
-Translate the following JSON object values from German to {$targetLanguage}. 
+Translate the following JSON object values from German to {$targetLanguage}.
 Keep the JSON keys unchanged, only translate the values.
 Return ONLY the translated JSON object, no additional text.
 
@@ -88,9 +89,11 @@ Return ONLY the translated JSON object, no additional text.
 ```
 PROMPT;
 
+        $maxTokens = $this->getMaxTokens($model);
+
         $payload = [
             'model' => $model,
-            'max_tokens' => 4096,
+            'max_tokens' => $maxTokens,
             'system' => $systemPrompt,
             'messages' => [
                 [
@@ -102,7 +105,7 @@ PROMPT;
 
         $response = $this->makeRequest($payload, $apiKey);
         $translatedJson = $this->extractTranslation($response);
-        
+
         // Parse the JSON response
         $translatedJson = preg_replace('/^```json\s*|\s*```$/s', '', trim($translatedJson));
         $translated = json_decode($translatedJson, true);
@@ -116,6 +119,46 @@ PROMPT;
         }
 
         return $translated;
+    }
+
+    public function getAvailableModels(): array
+    {
+        $apiKey = $this->systemConfigService->get('VivaturaTranslator.config.anthropicApiKey');
+        if (empty($apiKey)) {
+            throw new \RuntimeException('Anthropic API key not configured.');
+        }
+
+        $ch = curl_init('https://api.anthropic.com/v1/models');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'x-api-key: ' . $apiKey,
+                'anthropic-version: ' . self::API_VERSION,
+            ],
+            CURLOPT_TIMEOUT => 30,
+        ]);
+
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            throw new \RuntimeException('Failed to fetch models: ' . $error);
+        }
+
+        $data = json_decode($response, true);
+        return $data['data'] ?? [];
+    }
+
+    private function getMaxTokens(string $model): int
+    {
+        // Claude 3.5 models support 8192 tokens
+        if (str_contains($model, 'claude-3-5')) {
+            return 8192;
+        }
+
+        // Older models (Claude 3 Opus, Sonnet, Haiku) default to 4096
+        return 4096;
     }
 
     private function buildUserPrompt(string $text, string $targetLanguage): string

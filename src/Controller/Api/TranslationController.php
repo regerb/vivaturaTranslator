@@ -416,6 +416,36 @@ class TranslationController extends AbstractController
         }
     }
 
+    #[Route(
+        path: '/api/_action/vivatura-translator/debug-models',
+        name: 'api.action.vivatura_translator.debug_models',
+        defaults: ['_acl' => []],
+        methods: ['GET']
+    )]
+    public function debugModels(Context $context): JsonResponse
+    {
+        try {
+            // Use reflection or a public method to access the private AnthropicClient
+            // Since we can't easily modify the service definition to make the client public,
+            // we'll rely on the TranslationService if we added a method there, or check directly.
+
+            // Actually, we need to access the client through the service.
+            // Let's add a wrapper method to TranslationService first.
+
+            // But since I cannot modify TranslationService in this step (Edit tool is for one file),
+            // I will assume I can add a method to TranslationService later or just instantiate the client here for debugging?
+            // No, better to add it to TranslationService properly.
+
+            // Wait, I can't instantiate it easily because of dependencies.
+            // I'll add a method getAvailableModels() to TranslationService that delegates to AnthropicClient.
+
+            $models = $this->translationService->getAvailableModels();
+            return new JsonResponse(['success' => true, 'models' => $models]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
     // ========================================
     // TRANSLATION STATUS / PROGRESS
     // ========================================
