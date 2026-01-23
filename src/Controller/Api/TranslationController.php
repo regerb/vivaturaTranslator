@@ -7,10 +7,15 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Vivatura\VivaturaTranslator\Message\TranslateCmsPageMessage;
+use Vivatura\VivaturaTranslator\Message\TranslateProductMessage;
+use Vivatura\VivaturaTranslator\Message\TranslateSnippetSetMessage;
 use Vivatura\VivaturaTranslator\Service\TranslationService;
 
 #[Route(defaults: ['_routeScope' => ['api']])]
@@ -22,7 +27,9 @@ class TranslationController extends AbstractController
         private readonly EntityRepository $productRepository,
         private readonly EntityRepository $cmsPageRepository,
         private readonly EntityRepository $snippetSetRepository,
-        private readonly EntityRepository $snippetRepository
+        private readonly EntityRepository $snippetRepository,
+        private readonly EntityRepository $translationJobRepository,
+        private readonly MessageBusInterface $messageBus
     ) {
     }
 
@@ -106,8 +113,15 @@ class TranslationController extends AbstractController
         }
 
         try {
-            $result = $this->translationService->translateProduct($productId, $targetLanguageIds, $context);
-            return new JsonResponse(['success' => true, 'results' => $result]);
+            $jobId = $this->createTranslationJob('product', $productId, $targetLanguageIds, $context);
+            $this->messageBus->dispatch(new TranslateProductMessage($jobId, $productId, $targetLanguageIds));
+
+            return new JsonResponse([
+                'success' => true,
+                'async' => true,
+                'jobId' => $jobId,
+                'message' => 'Translation job queued'
+            ]);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], 500);
         }
@@ -133,28 +147,22 @@ class TranslationController extends AbstractController
             return new JsonResponse(['error' => 'No target languages specified'], 400);
         }
 
-        $results = [];
-        $successCount = 0;
-        $errorCount = 0;
-
+        $jobIds = [];
         foreach ($productIds as $productId) {
             try {
-                $results[$productId] = $this->translationService->translateProduct($productId, $targetLanguageIds, $context);
-                $successCount++;
+                $jobId = $this->createTranslationJob('product', $productId, $targetLanguageIds, $context);
+                $this->messageBus->dispatch(new TranslateProductMessage($jobId, $productId, $targetLanguageIds));
+                $jobIds[$productId] = $jobId;
             } catch (\Exception $e) {
-                $results[$productId] = ['error' => $e->getMessage()];
-                $errorCount++;
+                $jobIds[$productId] = ['error' => $e->getMessage()];
             }
         }
 
         return new JsonResponse([
             'success' => true,
-            'results' => $results,
-            'summary' => [
-                'total' => count($productIds),
-                'success' => $successCount,
-                'errors' => $errorCount,
-            ]
+            'async' => true,
+            'jobIds' => $jobIds,
+            'message' => count($productIds) . ' translation jobs queued'
         ]);
     }
 
@@ -238,8 +246,15 @@ class TranslationController extends AbstractController
         }
 
         try {
-            $result = $this->translationService->translateCmsPage($pageId, $targetLanguageIds, $context);
-            return new JsonResponse(['success' => true, 'results' => $result]);
+            $jobId = $this->createTranslationJob('cms_page', $pageId, $targetLanguageIds, $context);
+            $this->messageBus->dispatch(new TranslateCmsPageMessage($jobId, $pageId, $targetLanguageIds));
+
+            return new JsonResponse([
+                'success' => true,
+                'async' => true,
+                'jobId' => $jobId,
+                'message' => 'Translation job queued'
+            ]);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], 500);
         }
@@ -265,28 +280,22 @@ class TranslationController extends AbstractController
             return new JsonResponse(['error' => 'No target languages specified'], 400);
         }
 
-        $results = [];
-        $successCount = 0;
-        $errorCount = 0;
-
+        $jobIds = [];
         foreach ($pageIds as $pageId) {
             try {
-                $results[$pageId] = $this->translationService->translateCmsPage($pageId, $targetLanguageIds, $context);
-                $successCount++;
+                $jobId = $this->createTranslationJob('cms_page', $pageId, $targetLanguageIds, $context);
+                $this->messageBus->dispatch(new TranslateCmsPageMessage($jobId, $pageId, $targetLanguageIds));
+                $jobIds[$pageId] = $jobId;
             } catch (\Exception $e) {
-                $results[$pageId] = ['error' => $e->getMessage()];
-                $errorCount++;
+                $jobIds[$pageId] = ['error' => $e->getMessage()];
             }
         }
 
         return new JsonResponse([
             'success' => true,
-            'results' => $results,
-            'summary' => [
-                'total' => count($pageIds),
-                'success' => $successCount,
-                'errors' => $errorCount,
-            ]
+            'async' => true,
+            'jobIds' => $jobIds,
+            'message' => count($pageIds) . ' translation jobs queued'
         ]);
     }
 
@@ -379,15 +388,23 @@ class TranslationController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $sourceSetId = $data['sourceSetId'] ?? null;
         $targetSetId = $data['targetSetId'] ?? null;
-        $snippetIds = $data['snippetIds'] ?? null; // optional: specific snippets
+        $snippetIds = $data['snippetIds'] ?? null;
 
         if (empty($sourceSetId) || empty($targetSetId)) {
             return new JsonResponse(['error' => 'Source and target snippet sets are required'], 400);
         }
 
         try {
-            $result = $this->translationService->translateSnippetSet($sourceSetId, $targetSetId, $snippetIds, $context);
-            return new JsonResponse(['success' => true, 'results' => $result]);
+            $entityId = $sourceSetId . ':' . $targetSetId;
+            $jobId = $this->createTranslationJob('snippet_set', $entityId, [], $context);
+            $this->messageBus->dispatch(new TranslateSnippetSetMessage($jobId, $sourceSetId, $targetSetId, $snippetIds));
+
+            return new JsonResponse([
+                'success' => true,
+                'async' => true,
+                'jobId' => $jobId,
+                'message' => 'Translation job queued'
+            ]);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], 500);
         }
@@ -480,5 +497,90 @@ class TranslationController extends AbstractController
             'cmsPages' => $cmsTotal,
             'snippetSets' => $snippetSetTotal,
         ]);
+    }
+
+    // ========================================
+    // JOB STATUS ENDPOINTS
+    // ========================================
+
+    #[Route(
+        path: '/api/_action/vivatura-translator/job-status/{jobId}',
+        name: 'api.action.vivatura_translator.job_status',
+        defaults: ['_acl' => []],
+        methods: ['GET']
+    )]
+    public function getJobStatus(string $jobId, Context $context): JsonResponse
+    {
+        $criteria = new Criteria([$jobId]);
+        $job = $this->translationJobRepository->search($criteria, $context)->first();
+
+        if (!$job) {
+            return new JsonResponse(['error' => 'Job not found'], 404);
+        }
+
+        return new JsonResponse([
+            'id' => $job->getId(),
+            'type' => $job->getType(),
+            'entityId' => $job->getEntityId(),
+            'status' => $job->getStatus(),
+            'result' => $job->getResult(),
+            'startedAt' => $job->getStartedAt()?->format('c'),
+            'finishedAt' => $job->getFinishedAt()?->format('c'),
+            'createdAt' => $job->getCreatedAt()?->format('c'),
+        ]);
+    }
+
+    #[Route(
+        path: '/api/_action/vivatura-translator/jobs-status',
+        name: 'api.action.vivatura_translator.jobs_status',
+        defaults: ['_acl' => []],
+        methods: ['POST']
+    )]
+    public function getJobsStatus(Request $request, Context $context): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $jobIds = $data['jobIds'] ?? [];
+
+        if (empty($jobIds)) {
+            return new JsonResponse(['error' => 'No job IDs specified'], 400);
+        }
+
+        $criteria = new Criteria($jobIds);
+        $jobs = $this->translationJobRepository->search($criteria, $context);
+
+        $results = [];
+        foreach ($jobs->getEntities() as $job) {
+            $results[$job->getId()] = [
+                'type' => $job->getType(),
+                'entityId' => $job->getEntityId(),
+                'status' => $job->getStatus(),
+                'result' => $job->getResult(),
+                'startedAt' => $job->getStartedAt()?->format('c'),
+                'finishedAt' => $job->getFinishedAt()?->format('c'),
+            ];
+        }
+
+        return new JsonResponse(['jobs' => $results]);
+    }
+
+    // ========================================
+    // HELPER METHODS
+    // ========================================
+
+    private function createTranslationJob(string $type, string $entityId, array $targetLanguageIds, Context $context): string
+    {
+        $jobId = Uuid::randomHex();
+
+        $this->translationJobRepository->create([
+            [
+                'id' => $jobId,
+                'type' => $type,
+                'entityId' => $entityId,
+                'status' => 'pending',
+                'targetLanguageIds' => $targetLanguageIds,
+            ]
+        ], $context);
+
+        return $jobId;
     }
 }

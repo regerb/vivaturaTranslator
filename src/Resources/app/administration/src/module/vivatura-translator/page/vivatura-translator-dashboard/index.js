@@ -63,6 +63,8 @@ Component.register('vivatura-translator-dashboard', {
             isTranslating: false,
             translationProgress: 0,
             translationResults: null,
+            activeJobIds: [],
+            pollingInterval: null,
 
             // Settings
             languagePrompts: {}
@@ -231,24 +233,28 @@ Component.register('vivatura-translator-dashboard', {
                     targetLanguageIds: this.selectedLanguages
                 }, { headers: this.authHeaders });
 
-                this.translationResults = response.data;
-                this.translationProgress = 100;
-
-                const summary = response.data.summary;
-                this.createNotificationSuccess({
-                    title: this.$tc('vivatura-translator.notification.successTitle'),
-                    message: this.$tc('vivatura-translator.notification.productsTranslated', summary.success, { count: summary.success, errors: summary.errors })
-                });
+                if (response.data.async) {
+                    // Async mode - start polling for job status
+                    this.activeJobIds = Object.values(response.data.jobIds).filter(id => typeof id === 'string');
+                    this.createNotificationInfo({
+                        title: this.$tc('vivatura-translator.notification.infoTitle'),
+                        message: response.data.message
+                    });
+                    this.startPolling();
+                } else {
+                    // Sync mode fallback
+                    this.translationResults = response.data;
+                    this.translationProgress = 100;
+                    this.onTranslationComplete(response.data);
+                }
 
                 this.selectedProducts = [];
-                await this.loadProducts();
             } catch (error) {
+                this.isTranslating = false;
                 this.createNotificationError({
                     title: this.$tc('vivatura-translator.notification.errorTitle'),
                     message: error.response?.data?.error || error.message
                 });
-            } finally {
-                this.isTranslating = false;
             }
         },
 
@@ -320,24 +326,28 @@ Component.register('vivatura-translator-dashboard', {
                     targetLanguageIds: this.selectedLanguages
                 }, { headers: this.authHeaders });
 
-                this.translationResults = response.data;
-                this.translationProgress = 100;
-
-                const summary = response.data.summary;
-                this.createNotificationSuccess({
-                    title: this.$tc('vivatura-translator.notification.successTitle'),
-                    message: this.$tc('vivatura-translator.notification.cmsPagesTranslated', summary.success, { count: summary.success, errors: summary.errors })
-                });
+                if (response.data.async) {
+                    // Async mode - start polling for job status
+                    this.activeJobIds = Object.values(response.data.jobIds).filter(id => typeof id === 'string');
+                    this.createNotificationInfo({
+                        title: this.$tc('vivatura-translator.notification.infoTitle'),
+                        message: response.data.message
+                    });
+                    this.startPolling();
+                } else {
+                    // Sync mode fallback
+                    this.translationResults = response.data;
+                    this.translationProgress = 100;
+                    this.onTranslationComplete(response.data);
+                }
 
                 this.selectedCmsPages = [];
-                await this.loadCmsPages();
             } catch (error) {
+                this.isTranslating = false;
                 this.createNotificationError({
                     title: this.$tc('vivatura-translator.notification.errorTitle'),
                     message: error.response?.data?.error || error.message
                 });
-            } finally {
-                this.isTranslating = false;
             }
         },
 
@@ -434,23 +444,28 @@ Component.register('vivatura-translator-dashboard', {
 
                 const response = await this.httpClient.post('/_action/vivatura-translator/translate-snippet-set', payload, { headers: this.authHeaders });
 
-                this.translationResults = response.data;
-                this.translationProgress = 100;
-
-                const result = response.data.results;
-                this.createNotificationSuccess({
-                    title: this.$tc('vivatura-translator.notification.successTitle'),
-                    message: this.$tc('vivatura-translator.notification.snippetsTranslated', result.translated, { count: result.translated, errors: result.errors })
-                });
+                if (response.data.async) {
+                    // Async mode - start polling for job status
+                    this.activeJobIds = [response.data.jobId];
+                    this.createNotificationInfo({
+                        title: this.$tc('vivatura-translator.notification.infoTitle'),
+                        message: response.data.message
+                    });
+                    this.startPolling();
+                } else {
+                    // Sync mode fallback
+                    this.translationResults = response.data;
+                    this.translationProgress = 100;
+                    this.onTranslationComplete(response.data);
+                }
 
                 this.selectedSnippets = [];
             } catch (error) {
+                this.isTranslating = false;
                 this.createNotificationError({
                     title: this.$tc('vivatura-translator.notification.errorTitle'),
                     message: error.response?.data?.error || error.message
                 });
-            } finally {
-                this.isTranslating = false;
             }
         },
 
@@ -547,6 +562,116 @@ Component.register('vivatura-translator-dashboard', {
                 this.loadSnippetSets();
             } else if (newTab === 'settings') {
                 this.loadLanguagePrompts();
+            }
+        },
+
+        // ========================================
+        // JOB POLLING
+        // ========================================
+
+        startPolling() {
+            if (this.pollingInterval) {
+                clearInterval(this.pollingInterval);
+            }
+
+            this.pollingInterval = setInterval(() => {
+                this.checkJobStatus();
+            }, 2000);
+        },
+
+        stopPolling() {
+            if (this.pollingInterval) {
+                clearInterval(this.pollingInterval);
+                this.pollingInterval = null;
+            }
+        },
+
+        async checkJobStatus() {
+            if (this.activeJobIds.length === 0) {
+                this.stopPolling();
+                return;
+            }
+
+            try {
+                const response = await this.httpClient.post('/_action/vivatura-translator/jobs-status', {
+                    jobIds: this.activeJobIds
+                }, { headers: this.authHeaders });
+
+                const jobs = response.data.jobs || {};
+                const jobStatuses = Object.values(jobs);
+
+                // Calculate progress
+                const completedCount = jobStatuses.filter(j => j.status === 'completed' || j.status === 'failed').length;
+                const totalCount = this.activeJobIds.length;
+                this.translationProgress = Math.round((completedCount / totalCount) * 100);
+
+                // Check if all jobs are done
+                const allDone = jobStatuses.every(j => j.status === 'completed' || j.status === 'failed');
+
+                if (allDone) {
+                    this.stopPolling();
+
+                    // Compile results
+                    const successCount = jobStatuses.filter(j => j.status === 'completed').length;
+                    const errorCount = jobStatuses.filter(j => j.status === 'failed').length;
+
+                    this.translationResults = {
+                        summary: {
+                            total: totalCount,
+                            success: successCount,
+                            errors: errorCount
+                        },
+                        jobs: jobs
+                    };
+
+                    this.isTranslating = false;
+                    this.activeJobIds = [];
+
+                    if (errorCount === 0) {
+                        this.createNotificationSuccess({
+                            title: this.$tc('vivatura-translator.notification.successTitle'),
+                            message: this.$tc('vivatura-translator.notification.translationCompleted', successCount, { count: successCount })
+                        });
+                    } else {
+                        this.createNotificationWarning({
+                            title: this.$tc('vivatura-translator.notification.warningTitle'),
+                            message: this.$tc('vivatura-translator.notification.translationPartial', successCount, { success: successCount, errors: errorCount })
+                        });
+                    }
+
+                    // Reload current data
+                    if (this.activeTab === 'products') {
+                        await this.loadProducts();
+                    } else if (this.activeTab === 'cms') {
+                        await this.loadCmsPages();
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to check job status:', error);
+            }
+        },
+
+        onTranslationComplete(data) {
+            this.isTranslating = false;
+
+            const summary = data.summary || { success: 1, errors: 0 };
+            if (summary.errors === 0) {
+                this.createNotificationSuccess({
+                    title: this.$tc('vivatura-translator.notification.successTitle'),
+                    message: this.$tc('vivatura-translator.notification.translationCompleted', summary.success, { count: summary.success })
+                });
+            } else {
+                this.createNotificationWarning({
+                    title: this.$tc('vivatura-translator.notification.warningTitle'),
+                    message: this.$tc('vivatura-translator.notification.translationPartial', summary.success, { success: summary.success, errors: summary.errors })
+                });
+            }
+
+            // Reload current data
+            if (this.activeTab === 'products') {
+                this.loadProducts();
+            } else if (this.activeTab === 'cms') {
+                this.loadCmsPages();
             }
         }
     }

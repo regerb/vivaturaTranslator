@@ -28,6 +28,14 @@
         <!-- Content Extractor -->
         <service id="Vivatura\VivaturaTranslator\Service\ContentExtractor"/>
 
+        <!-- Message Handler for async translation -->
+        <service id="Vivatura\VivaturaTranslator\MessageHandler\TranslationMessageHandler">
+            <argument type="service" id="Vivatura\VivaturaTranslator\Service\TranslationService"/>
+            <argument type="service" id="viv_translator_job.repository"/>
+            <argument type="service" id="logger"/>
+            <tag name="messenger.message_handler"/>
+        </service>
+
         <!-- API Controller -->
         <service id="Vivatura\VivaturaTranslator\Controller\Api\TranslationController" public="true">
             <argument type="service" id="Vivatura\VivaturaTranslator\Service\TranslationService"/>
@@ -36,15 +44,21 @@
             <argument type="service" id="cms_page.repository"/>
             <argument type="service" id="snippet_set.repository"/>
             <argument type="service" id="snippet.repository"/>
+            <argument type="service" id="viv_translator_job.repository"/>
+            <argument type="service" id="messenger.default_bus"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
             <tag name="controller.service_arguments"/>
         </service>
 
-        <!-- Language Prompt Entity Definition -->
+        <!-- Entity Definitions -->
         <service id="Vivatura\VivaturaTranslator\Entity\LanguagePromptDefinition">
             <tag name="shopware.entity.definition" entity="viv_translator_language_prompt"/>
+        </service>
+
+        <service id="Vivatura\VivaturaTranslator\Entity\TranslationJobDefinition">
+            <tag name="shopware.entity.definition" entity="viv_translator_job"/>
         </service>
     </services>
 </container>
