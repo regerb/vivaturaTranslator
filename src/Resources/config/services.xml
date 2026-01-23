@@ -22,6 +22,7 @@
             <argument type="service" id="viv_translator_language_prompt.repository" on-invalid="null"/>
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
             <argument type="service" id="cms_slot.repository"/>
+            <argument type="service" id="logger"/>
         </service>
 
         <!-- Content Extractor -->

@@ -2,6 +2,7 @@
 
 namespace Vivatura\VivaturaTranslator\Service;
 
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -22,7 +23,8 @@ class TranslationService
         private readonly EntityRepository $languageRepository,
         private readonly ?EntityRepository $languagePromptRepository,
         private readonly SystemConfigService $systemConfigService,
-        private readonly EntityRepository $cmsSlotRepository
+        private readonly EntityRepository $cmsSlotRepository,
+        private readonly LoggerInterface $logger
     ) {
     }
 
@@ -32,8 +34,18 @@ class TranslationService
 
     public function translateProduct(string $productId, array $targetLanguageIds, Context $context): array
     {
+        $this->logger->info('TranslationService: Starting product translation', [
+            'productId' => $productId,
+            'targetLanguageIds' => $targetLanguageIds,
+        ]);
+
         // Create context with source language to get the source texts
         $sourceLanguageId = $this->getSourceLanguageId($context);
+        $this->logger->info('TranslationService: Source language resolved', [
+            'sourceLanguageId' => $sourceLanguageId,
+            'configuredSourceLanguage' => $this->systemConfigService->get('VivaturaTranslator.config.sourceLanguage') ?? 'de-DE',
+        ]);
+
         $sourceContext = new Context(
             $context->getSource(),
             $context->getRuleIds(),
@@ -46,11 +58,29 @@ class TranslationService
         $product = $this->productRepository->search($criteria, $sourceContext)->first();
 
         if (!$product) {
+            $this->logger->error('TranslationService: Product not found', ['productId' => $productId]);
             throw new \RuntimeException('Product not found: ' . $productId);
         }
 
+        $this->logger->info('TranslationService: Product loaded', [
+            'productId' => $productId,
+            'productName' => $product->getName(),
+            'productNumber' => $product->getProductNumber(),
+        ]);
+
         $content = $this->contentExtractor->extractProductContent($product);
+
+        $this->logger->info('TranslationService: Content extracted', [
+            'productId' => $productId,
+            'contentFields' => array_keys($content),
+            'contentCount' => count($content),
+            'content' => $content,
+        ]);
+
         if (empty($content)) {
+            $this->logger->warning('TranslationService: No translatable content found', [
+                'productId' => $productId,
+            ]);
             return ['success' => true, 'message' => 'No translatable content found'];
         }
 
@@ -60,11 +90,37 @@ class TranslationService
             $languageCode = $language->getLocale()?->getCode() ?? 'en-GB';
             $systemPrompt = $this->getSystemPromptForLanguage($languageId, $context);
 
+            $this->logger->info('TranslationService: Translating to language', [
+                'productId' => $productId,
+                'targetLanguageId' => $languageId,
+                'targetLanguageCode' => $languageCode,
+            ]);
+
             try {
                 $translated = $this->anthropicClient->translateBatch($content, $languageCode, $systemPrompt);
+
+                $this->logger->info('TranslationService: Translation received from API', [
+                    'productId' => $productId,
+                    'targetLanguageCode' => $languageCode,
+                    'translatedFields' => array_keys($translated),
+                    'translated' => $translated,
+                ]);
+
                 $this->saveProductTranslation($productId, $languageId, $translated, $context);
+
+                $this->logger->info('TranslationService: Translation saved', [
+                    'productId' => $productId,
+                    'targetLanguageId' => $languageId,
+                ]);
+
                 $results[$languageCode] = ['success' => true, 'fields' => count($translated)];
             } catch (\Exception $e) {
+                $this->logger->error('TranslationService: Translation failed', [
+                    'productId' => $productId,
+                    'targetLanguageCode' => $languageCode,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
                 $results[$languageCode] = ['success' => false, 'error' => $e->getMessage()];
             }
         }
