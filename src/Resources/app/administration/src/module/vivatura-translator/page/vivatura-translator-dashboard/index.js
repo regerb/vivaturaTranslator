@@ -199,6 +199,10 @@ Component.register('vivatura-translator-dashboard', {
             this.loadProducts();
         },
 
+        onProductSelectionChange(selection) {
+            this.selectedProducts = Object.keys(selection);
+        },
+
         toggleProduct(productId) {
             if (this.selectedProducts.includes(productId)) {
                 this.selectedProducts = this.selectedProducts.filter(id => id !== productId);
@@ -282,6 +286,10 @@ Component.register('vivatura-translator-dashboard', {
         onCmsPageChange(page) {
             this.cmsPage = page;
             this.loadCmsPages();
+        },
+
+        onCmsSelectionChange(selection) {
+            this.selectedCmsPages = Object.keys(selection);
         },
 
         toggleCmsPage(pageId) {
@@ -385,6 +393,10 @@ Component.register('vivatura-translator-dashboard', {
         onSnippetPageChange(page) {
             this.snippetPage = page;
             this.loadSnippets();
+        },
+
+        onSnippetSelectionChange(selection) {
+            this.selectedSnippets = Object.keys(selection);
         },
 
         toggleSnippet(snippetId) {

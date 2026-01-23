@@ -111,21 +111,15 @@
                 <sw-data-grid
                     :dataSource="products"
                     :columns="[
-                        { property: 'selected', label: '', width: '50px' },
                         { property: 'productNumber', label: $tc('vivatura-translator.dashboard.productNumber') },
                         { property: 'name', label: $tc('vivatura-translator.dashboard.name'), primary: true },
                         { property: 'translationCount', label: $tc('vivatura-translator.dashboard.translations'), width: '120px' }
                     ]"
-                    :showSelection="false"
+                    :showSelection="true"
                     :showActions="false"
                     identifier="vivatura-products"
+                    @selection-change="onProductSelectionChange"
                 >
-                    <template #column-selected="{ item }">
-                        <sw-checkbox-field
-                            :value="selectedProducts.includes(item.id)"
-                            @change="toggleProduct(item.id)"
-                        />
-                    </template>
                     <template #column-name="{ item }">
                         {{ item.name }}
                     </template>
@@ -139,9 +133,6 @@
                         @page-change="onProductPageChange"
                     />
                     <div class="selection-info">
-                        <sw-button size="small" @click="toggleAllProducts">
-                            {{ allProductsSelected ? $tc('vivatura-translator.modal.deselectAll') : $tc('vivatura-translator.modal.selectAll') }}
-                        </sw-button>
                         <span>{{ selectedProducts.length }} {{ $tc('vivatura-translator.dashboard.selected') }}</span>
                     </div>
                 </template>
@@ -177,22 +168,16 @@
                 <sw-data-grid
                     :dataSource="cmsPages"
                     :columns="[
-                        { property: 'selected', label: '', width: '50px' },
                         { property: 'name', label: $tc('vivatura-translator.dashboard.name'), primary: true },
                         { property: 'type', label: $tc('vivatura-translator.dashboard.type'), width: '120px' },
                         { property: 'slotCount', label: $tc('vivatura-translator.dashboard.slots'), width: '100px' },
                         { property: 'translationCount', label: $tc('vivatura-translator.dashboard.translations'), width: '120px' }
                     ]"
-                    :showSelection="false"
+                    :showSelection="true"
                     :showActions="false"
                     identifier="vivatura-cms"
+                    @selection-change="onCmsSelectionChange"
                 >
-                    <template #column-selected="{ item }">
-                        <sw-checkbox-field
-                            :value="selectedCmsPages.includes(item.id)"
-                            @change="toggleCmsPage(item.id)"
-                        />
-                    </template>
                 </sw-data-grid>
 
                 <template #footer>
@@ -203,9 +188,6 @@
                         @page-change="onCmsPageChange"
                     />
                     <div class="selection-info">
-                        <sw-button size="small" @click="toggleAllCmsPages">
-                            {{ allCmsPagesSelected ? $tc('vivatura-translator.modal.deselectAll') : $tc('vivatura-translator.modal.selectAll') }}
-                        </sw-button>
                         <span>{{ selectedCmsPages.length }} {{ $tc('vivatura-translator.dashboard.selected') }}</span>
                     </div>
                 </template>
@@ -268,21 +250,15 @@
                     <sw-data-grid
                         :dataSource="snippets"
                         :columns="[
-                            { property: 'selected', label: '', width: '50px' },
                             { property: 'translationKey', label: $tc('vivatura-translator.dashboard.translationKey'), primary: true },
                             { property: 'value', label: $tc('vivatura-translator.dashboard.value') },
                             { property: 'author', label: $tc('vivatura-translator.dashboard.author'), width: '150px' }
                         ]"
-                        :showSelection="false"
+                        :showSelection="true"
                         :showActions="false"
                         identifier="vivatura-snippets"
+                        @selection-change="onSnippetSelectionChange"
                     >
-                        <template #column-selected="{ item }">
-                            <sw-checkbox-field
-                                :value="selectedSnippets.includes(item.id)"
-                                @change="toggleSnippet(item.id)"
-                            />
-                        </template>
                     </sw-data-grid>
                 </div>
 
@@ -294,9 +270,6 @@
                         @page-change="onSnippetPageChange"
                     />
                     <div class="selection-info">
-                        <sw-button size="small" @click="toggleAllSnippets">
-                            {{ allSnippetsSelected ? $tc('vivatura-translator.modal.deselectAll') : $tc('vivatura-translator.modal.selectAll') }}
-                        </sw-button>
                         <span>{{ selectedSnippets.length }} {{ $tc('vivatura-translator.dashboard.selected') }}</span>
                         <span class="hint">{{ $tc('vivatura-translator.dashboard.snippetHint') }}</span>
                     </div>
