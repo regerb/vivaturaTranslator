@@ -11,7 +11,7 @@
         <sw-card-view>
             {# Status Overview #}
             {% block vivatura_translator_status %}
-            <sw-card :title="$tc('vivatura-translator.dashboard.statusTitle')" :isLoading="isLoading">
+            <sw-card :title="$tc('vivatura-translator.dashboard.statusTitle')" :isLoading="isAnyLoading">
                 <div class="vivatura-translator-status-grid">
                     <div class="status-item">
                         <span class="status-value">{{ status.languages }}</span>
@@ -51,14 +51,13 @@
                             :key="language.id"
                             class="language-item"
                             :class="{ 'is-selected': isLanguageSelected(language.id) }"
-                            @click="toggleLanguage(language.id)"
                         >
                             <sw-checkbox-field
                                 :value="isLanguageSelected(language.id)"
                                 @change="toggleLanguage(language.id)"
                             />
-                            <span class="language-name">{{ language.name }}</span>
-                            <span class="language-locale">({{ language.locale }})</span>
+                            <span class="language-name" @click="toggleLanguage(language.id)">{{ language.name }}</span>
+                            <span class="language-locale" @click="toggleLanguage(language.id)">({{ language.locale }})</span>
                         </div>
                     </div>
                 </div>
@@ -85,7 +84,7 @@
 
             {# Products Tab #}
             {% block vivatura_translator_products %}
-            <sw-card v-if="activeTab === 'products'" :isLoading="isLoading">
+            <sw-card v-if="activeTab === 'products'" :isLoading="isLoadingProducts">
                 <template #toolbar>
                     <sw-container columns="1fr auto" gap="16px">
                         <sw-simple-search-field
@@ -151,7 +150,7 @@
 
             {# CMS Pages Tab #}
             {% block vivatura_translator_cms %}
-            <sw-card v-if="activeTab === 'cms'" :isLoading="isLoading">
+            <sw-card v-if="activeTab === 'cms'" :isLoading="isLoadingCms">
                 <template #toolbar>
                     <sw-container columns="1fr auto" gap="16px">
                         <sw-simple-search-field
@@ -215,7 +214,7 @@
 
             {# Snippets Tab #}
             {% block vivatura_translator_snippets %}
-            <sw-card v-if="activeTab === 'snippets'" :isLoading="isLoading">
+            <sw-card v-if="activeTab === 'snippets'" :isLoading="isLoadingSnippets">
                 <template #toolbar>
                     <sw-container columns="1fr 1fr auto" gap="16px">
                         <sw-single-select
@@ -313,7 +312,7 @@
 
             {# Settings Tab #}
             {% block vivatura_translator_settings %}
-            <sw-card v-if="activeTab === 'settings'" :title="$tc('vivatura-translator.settings.title')" :isLoading="isLoading">
+            <sw-card v-if="activeTab === 'settings'" :title="$tc('vivatura-translator.settings.title')" :isLoading="isAnyLoading">
                 <sw-alert variant="info" class="settings-info">
                     {{ $tc('vivatura-translator.settings.infoText') }}
                 </sw-alert>

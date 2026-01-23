@@ -15,6 +15,9 @@ Component.register('vivatura-translator-dashboard', {
     data() {
         return {
             isLoading: false,
+            isLoadingProducts: false,
+            isLoadingCms: false,
+            isLoadingSnippets: false,
             activeTab: 'products',
 
             // Status
@@ -76,6 +79,10 @@ Component.register('vivatura-translator-dashboard', {
                 Authorization: `Bearer ${this.loginService.getToken()}`,
                 'Content-Type': 'application/json'
             };
+        },
+
+        isAnyLoading() {
+            return this.isLoading || this.isLoadingProducts || this.isLoadingCms || this.isLoadingSnippets;
         },
 
         languageRepository() {
@@ -151,7 +158,7 @@ Component.register('vivatura-translator-dashboard', {
         // ========================================
 
         async loadProducts() {
-            this.isLoading = true;
+            this.isLoadingProducts = true;
             try {
                 const params = new URLSearchParams({
                     page: this.productPage,
@@ -161,8 +168,14 @@ Component.register('vivatura-translator-dashboard', {
                 const response = await this.httpClient.get(`/_action/vivatura-translator/products?${params}`, { headers: this.authHeaders });
                 this.products = response.data.products || [];
                 this.productTotal = response.data.total || 0;
+            } catch (error) {
+                console.error('Failed to load products:', error);
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.message
+                });
             } finally {
-                this.isLoading = false;
+                this.isLoadingProducts = false;
             }
         },
 
@@ -231,7 +244,7 @@ Component.register('vivatura-translator-dashboard', {
         // ========================================
 
         async loadCmsPages() {
-            this.isLoading = true;
+            this.isLoadingCms = true;
             try {
                 const params = new URLSearchParams({
                     page: this.cmsPage,
@@ -241,8 +254,14 @@ Component.register('vivatura-translator-dashboard', {
                 const response = await this.httpClient.get(`/_action/vivatura-translator/cms-pages?${params}`, { headers: this.authHeaders });
                 this.cmsPages = response.data.pages || [];
                 this.cmsTotal = response.data.total || 0;
+            } catch (error) {
+                console.error('Failed to load CMS pages:', error);
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.message
+                });
             } finally {
-                this.isLoading = false;
+                this.isLoadingCms = false;
             }
         },
 
@@ -326,7 +345,7 @@ Component.register('vivatura-translator-dashboard', {
         async loadSnippets() {
             if (!this.sourceSnippetSet) return;
 
-            this.isLoading = true;
+            this.isLoadingSnippets = true;
             try {
                 const params = new URLSearchParams({
                     setId: this.sourceSnippetSet,
@@ -337,8 +356,14 @@ Component.register('vivatura-translator-dashboard', {
                 const response = await this.httpClient.get(`/_action/vivatura-translator/snippets?${params}`, { headers: this.authHeaders });
                 this.snippets = response.data.snippets || [];
                 this.snippetTotal = response.data.total || 0;
+            } catch (error) {
+                console.error('Failed to load snippets:', error);
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.message
+                });
             } finally {
-                this.isLoading = false;
+                this.isLoadingSnippets = false;
             }
         },
 
@@ -489,8 +514,18 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         onTabChange(tabName) {
-            this.activeTab = tabName;
-            if (tabName === 'settings') {
+            // Handle both string and object from sw-tabs event
+            const newTab = typeof tabName === 'string' ? tabName : tabName?.name || tabName;
+            this.activeTab = newTab;
+
+            // Reload data when switching tabs
+            if (newTab === 'products') {
+                this.loadProducts();
+            } else if (newTab === 'cms') {
+                this.loadCmsPages();
+            } else if (newTab === 'snippets') {
+                this.loadSnippetSets();
+            } else if (newTab === 'settings') {
                 this.loadLanguagePrompts();
             }
         }
