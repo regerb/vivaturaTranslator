@@ -90,7 +90,7 @@ PROMPT;
 
         $payload = [
             'model' => $model,
-            'max_tokens' => 8192,
+            'max_tokens' => 4096,
             'system' => $systemPrompt,
             'messages' => [
                 [

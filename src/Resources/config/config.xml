@@ -20,19 +20,24 @@
             <defaultValue>claude-3-haiku-20240307</defaultValue>
             <options>
                 <option>
-                    <id>claude-3-haiku-20240307</id>
-                    <name>Claude 3 Haiku (schnell, günstig)</name>
-                    <name lang="en-GB">Claude 3 Haiku (fast, affordable)</name>
+                    <id>claude-3-5-sonnet-20241022</id>
+                    <name>Claude 3.5 Sonnet (Empfohlen - Beste Balance)</name>
+                    <name lang="en-GB">Claude 3.5 Sonnet (Recommended - Best Balance)</name>
                 </option>
                 <option>
-                    <id>claude-3-5-sonnet-20241022</id>
-                    <name>Claude 3.5 Sonnet (ausgewogen)</name>
-                    <name lang="en-GB">Claude 3.5 Sonnet (balanced)</name>
+                    <id>claude-3-5-haiku-20241022</id>
+                    <name>Claude 3.5 Haiku (Sehr schnell & intelligent)</name>
+                    <name lang="en-GB">Claude 3.5 Haiku (Very fast & intelligent)</name>
+                </option>
+                <option>
+                    <id>claude-3-haiku-20240307</id>
+                    <name>Claude 3 Haiku (Legacy)</name>
+                    <name lang="en-GB">Claude 3 Haiku (Legacy)</name>
                 </option>
                 <option>
                     <id>claude-3-opus-20240229</id>
-                    <name>Claude 3 Opus (beste Qualität)</name>
-                    <name lang="en-GB">Claude 3 Opus (best quality)</name>
+                    <name>Claude 3 Opus (Sehr leistungsstark)</name>
+                    <name lang="en-GB">Claude 3 Opus (Very powerful)</name>
                 </option>
             </options>
         </input-field>
