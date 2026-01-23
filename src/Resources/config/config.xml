@@ -46,8 +46,8 @@
                 </option>
                 <option>
                     <id>claude-3-5-haiku-20241022</id>
-                    <name>Claude 3.5 Haiku (Sehr schnell & intelligent)</name>
-                    <name lang="en-GB">Claude 3.5 Haiku (Very fast & intelligent)</name>
+                    <name>Claude 3.5 Haiku (Sehr schnell &amp; intelligent)</name>
+                    <name lang="en-GB">Claude 3.5 Haiku (Very fast &amp; intelligent)</name>
                 </option>
                 <option>
                     <id>claude-3-haiku-20240307</id>
