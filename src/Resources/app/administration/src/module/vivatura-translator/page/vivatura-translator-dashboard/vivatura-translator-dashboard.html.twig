@@ -223,11 +223,8 @@
                             labelProperty="name"
                             valueProperty="id"
                             :placeholder="$tc('vivatura-translator.dashboard.sourceSnippetSet')"
-                            @change="onSourceSnippetSetChange"
+                            @update:value="onSourceSnippetSetChange"
                         >
-                            <template #result-item="{ item }">
-                                {{ item.name }} ({{ item.iso }}) - {{ item.snippetCount }} Snippets
-                            </template>
                         </sw-single-select>
                         <sw-single-select
                             v-model="targetSnippetSet"
@@ -236,9 +233,6 @@
                             valueProperty="id"
                             :placeholder="$tc('vivatura-translator.dashboard.targetSnippetSet')"
                         >
-                            <template #result-item="{ item }">
-                                {{ item.name }} ({{ item.iso }})
-                            </template>
                         </sw-single-select>
                         <sw-button
                             variant="primary"

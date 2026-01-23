@@ -118,6 +118,16 @@ Component.register('vivatura-translator-dashboard', {
         }
     },
 
+    watch: {
+        sourceSnippetSet(newValue) {
+            if (newValue) {
+                this.loadSnippets();
+            } else {
+                this.snippets = [];
+            }
+        }
+    },
+
     created() {
         this.loadInitialData();
     },
@@ -190,11 +200,10 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         toggleProduct(productId) {
-            const index = this.selectedProducts.indexOf(productId);
-            if (index === -1) {
-                this.selectedProducts.push(productId);
+            if (this.selectedProducts.includes(productId)) {
+                this.selectedProducts = this.selectedProducts.filter(id => id !== productId);
             } else {
-                this.selectedProducts.splice(index, 1);
+                this.selectedProducts = [...this.selectedProducts, productId];
             }
         },
 
@@ -276,11 +285,10 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         toggleCmsPage(pageId) {
-            const index = this.selectedCmsPages.indexOf(pageId);
-            if (index === -1) {
-                this.selectedCmsPages.push(pageId);
+            if (this.selectedCmsPages.includes(pageId)) {
+                this.selectedCmsPages = this.selectedCmsPages.filter(id => id !== pageId);
             } else {
-                this.selectedCmsPages.splice(index, 1);
+                this.selectedCmsPages = [...this.selectedCmsPages, pageId];
             }
         },
 
@@ -334,8 +342,10 @@ Component.register('vivatura-translator-dashboard', {
             this.snippetSets = response.data.snippetSets || [];
         },
 
-        async onSourceSnippetSetChange() {
-            if (this.sourceSnippetSet) {
+        async onSourceSnippetSetChange(value) {
+            // Value might be passed from event or use the current sourceSnippetSet
+            const setId = value || this.sourceSnippetSet;
+            if (setId) {
                 await this.loadSnippets();
             } else {
                 this.snippets = [];
@@ -378,11 +388,10 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         toggleSnippet(snippetId) {
-            const index = this.selectedSnippets.indexOf(snippetId);
-            if (index === -1) {
-                this.selectedSnippets.push(snippetId);
+            if (this.selectedSnippets.includes(snippetId)) {
+                this.selectedSnippets = this.selectedSnippets.filter(id => id !== snippetId);
             } else {
-                this.selectedSnippets.splice(index, 1);
+                this.selectedSnippets = [...this.selectedSnippets, snippetId];
             }
         },
 
@@ -438,11 +447,10 @@ Component.register('vivatura-translator-dashboard', {
         // ========================================
 
         toggleLanguage(languageId) {
-            const index = this.selectedLanguages.indexOf(languageId);
-            if (index === -1) {
-                this.selectedLanguages.push(languageId);
+            if (this.selectedLanguages.includes(languageId)) {
+                this.selectedLanguages = this.selectedLanguages.filter(id => id !== languageId);
             } else {
-                this.selectedLanguages.splice(index, 1);
+                this.selectedLanguages = [...this.selectedLanguages, languageId];
             }
         },
 
