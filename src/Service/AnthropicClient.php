@@ -152,8 +152,8 @@ PROMPT;
 
     private function getMaxTokens(string $model): int
     {
-        // Claude 3.5 models support 8192 tokens
-        if (str_contains($model, 'claude-3-5')) {
+        // Claude 3.5 and 4.5 models support 8192 tokens
+        if (str_contains($model, 'claude-3-5') || str_contains($model, 'claude-4') || str_contains($model, '4-5')) {
             return 8192;
         }
 

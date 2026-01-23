@@ -20,9 +20,24 @@
             <defaultValue>claude-3-haiku-20240307</defaultValue>
             <options>
                 <option>
+                    <id>claude-opus-4-5-20251101</id>
+                    <name>Claude 4.5 Opus (Neuestes Spitzenmodell)</name>
+                    <name lang="en-GB">Claude 4.5 Opus (Latest Frontier Model)</name>
+                </option>
+                <option>
+                    <id>claude-sonnet-4-5</id>
+                    <name>Claude 4.5 Sonnet</name>
+                    <name lang="en-GB">Claude 4.5 Sonnet</name>
+                </option>
+                <option>
+                    <id>claude-haiku-4-5</id>
+                    <name>Claude 4.5 Haiku</name>
+                    <name lang="en-GB">Claude 4.5 Haiku</name>
+                </option>
+                <option>
                     <id>claude-3-5-sonnet-20241022</id>
-                    <name>Claude 3.5 Sonnet (Latest - 20241022)</name>
-                    <name lang="en-GB">Claude 3.5 Sonnet (Latest - 20241022)</name>
+                    <name>Claude 3.5 Sonnet (20241022)</name>
+                    <name lang="en-GB">Claude 3.5 Sonnet (20241022)</name>
                 </option>
                 <option>
                     <id>claude-3-5-sonnet-20240620</id>
