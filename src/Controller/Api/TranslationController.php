@@ -354,7 +354,13 @@ class TranslationController extends AbstractController
         $criteria->addSorting(new FieldSorting('translationKey', FieldSorting::ASCENDING));
 
         if (!empty($search)) {
-            $criteria->addFilter(new \Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter('translationKey', $search));
+            $criteria->addFilter(new \Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter(
+                \Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter::CONNECTION_OR,
+                [
+                    new \Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter('translationKey', $search),
+                    new \Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter('value', $search),
+                ]
+            ));
         }
 
         $result = $this->snippetRepository->search($criteria, $context);

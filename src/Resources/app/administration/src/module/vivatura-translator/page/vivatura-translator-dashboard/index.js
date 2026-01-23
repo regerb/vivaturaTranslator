@@ -197,7 +197,7 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         onProductPageChange(page) {
-            this.productPage = page;
+            this.productPage = typeof page === 'object' ? page.page : page;
             this.loadProducts();
         },
 
@@ -290,7 +290,7 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         onCmsPageChange(page) {
-            this.cmsPage = page;
+            this.cmsPage = typeof page === 'object' ? page.page : page;
             this.loadCmsPages();
         },
 
@@ -401,7 +401,7 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         onSnippetPageChange(page) {
-            this.snippetPage = page;
+            this.snippetPage = typeof page === 'object' ? page.page : page;
             this.loadSnippets();
         },
 
