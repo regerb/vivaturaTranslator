@@ -121,13 +121,6 @@ Component.register('vivatura-translator-dashboard', {
     },
 
     watch: {
-        sourceSnippetSet(newValue) {
-            if (newValue) {
-                this.loadSnippets();
-            } else {
-                this.snippets = [];
-            }
-        }
     },
 
     created() {
@@ -191,7 +184,8 @@ Component.register('vivatura-translator-dashboard', {
             }
         },
 
-        onProductSearch() {
+        onProductSearch(term) {
+            this.productSearch = term;
             this.productPage = 1;
             this.loadProducts();
         },
@@ -284,7 +278,8 @@ Component.register('vivatura-translator-dashboard', {
             }
         },
 
-        onCmsSearch() {
+        onCmsSearch(term) {
+            this.cmsSearch = term;
             this.cmsPage = 1;
             this.loadCmsPages();
         },
@@ -361,13 +356,16 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         async onSourceSnippetSetChange(value) {
-            // Value might be passed from event or use the current sourceSnippetSet
-            const setId = value || this.sourceSnippetSet;
-            if (setId) {
+            this.sourceSnippetSet = value;
+            if (this.sourceSnippetSet) {
                 await this.loadSnippets();
             } else {
                 this.snippets = [];
             }
+        },
+
+        onTargetSnippetSetChange(value) {
+            this.targetSnippetSet = value;
         },
 
         async loadSnippets() {
@@ -395,7 +393,8 @@ Component.register('vivatura-translator-dashboard', {
             }
         },
 
-        onSnippetSearch() {
+        onSnippetSearch(term) {
+            this.snippetSearch = term;
             this.snippetPage = 1;
             this.loadSnippets();
         },

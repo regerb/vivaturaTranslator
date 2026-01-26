@@ -126,14 +126,16 @@
                 </sw-data-grid>
 
                 <template #footer>
-                    <sw-pagination
-                        :total="productTotal"
-                        :limit="productLimit"
-                        :page="productPage"
-                        @page-change="onProductPageChange"
-                    />
-                    <div class="selection-info">
-                        <span>{{ selectedProducts.length }} {{ $tc('vivatura-translator.dashboard.selected') }}</span>
+                    <div class="vivatura-card-footer">
+                        <sw-pagination
+                            :total="productTotal"
+                            :limit="productLimit"
+                            :page="productPage"
+                            @page-change="onProductPageChange"
+                        />
+                        <div class="selection-info">
+                            <span>{{ selectedProducts.length }} {{ $tc('vivatura-translator.dashboard.selected') }}</span>
+                        </div>
                     </div>
                 </template>
             </sw-card>
@@ -181,14 +183,16 @@
                 </sw-data-grid>
 
                 <template #footer>
-                    <sw-pagination
-                        :total="cmsTotal"
-                        :limit="cmsLimit"
-                        :page="cmsPage"
-                        @page-change="onCmsPageChange"
-                    />
-                    <div class="selection-info">
-                        <span>{{ selectedCmsPages.length }} {{ $tc('vivatura-translator.dashboard.selected') }}</span>
+                    <div class="vivatura-card-footer">
+                        <sw-pagination
+                            :total="cmsTotal"
+                            :limit="cmsLimit"
+                            :page="cmsPage"
+                            @page-change="onCmsPageChange"
+                        />
+                        <div class="selection-info">
+                            <span>{{ selectedCmsPages.length }} {{ $tc('vivatura-translator.dashboard.selected') }}</span>
+                        </div>
                     </div>
                 </template>
             </sw-card>
@@ -200,7 +204,8 @@
                 <template #toolbar>
                     <sw-container columns="1fr 1fr auto" gap="16px">
                         <sw-single-select
-                            v-model="sourceSnippetSet"
+                            :value="sourceSnippetSet"
+                            @change="onSourceSnippetSetChange"
                             :options="snippetSets"
                             labelProperty="name"
                             valueProperty="id"
@@ -208,7 +213,8 @@
                         >
                         </sw-single-select>
                         <sw-single-select
-                            v-model="targetSnippetSet"
+                            :value="targetSnippetSet"
+                            @change="onTargetSnippetSetChange"
                             :options="snippetSets"
                             labelProperty="name"
                             valueProperty="id"
@@ -262,15 +268,17 @@
                 </div>
 
                 <template #footer v-if="sourceSnippetSet">
-                    <sw-pagination
-                        :total="snippetTotal"
-                        :limit="snippetLimit"
-                        :page="snippetPage"
-                        @page-change="onSnippetPageChange"
-                    />
-                    <div class="selection-info">
-                        <span>{{ selectedSnippets.length }} {{ $tc('vivatura-translator.dashboard.selected') }}</span>
-                        <span class="hint">{{ $tc('vivatura-translator.dashboard.snippetHint') }}</span>
+                    <div class="vivatura-card-footer">
+                        <sw-pagination
+                            :total="snippetTotal"
+                            :limit="snippetLimit"
+                            :page="snippetPage"
+                            @page-change="onSnippetPageChange"
+                        />
+                        <div class="selection-info">
+                            <span>{{ selectedSnippets.length }} {{ $tc('vivatura-translator.dashboard.selected') }}</span>
+                            <span class="hint">{{ $tc('vivatura-translator.dashboard.snippetHint') }}</span>
+                        </div>
                     </div>
                 </template>
             </sw-card>
