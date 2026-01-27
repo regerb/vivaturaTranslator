@@ -113,16 +113,34 @@ PROMPT;
         $response = $this->makeRequest($payload, $apiKey);
         $translatedJson = $this->extractTranslation($response);
 
-        // Parse the JSON response
-        $translatedJson = preg_replace('/^```json\s*|\s*```$/s', '', trim($translatedJson));
+        // Clean up the response - remove markdown code fences, triple quotes, and extra whitespace
+        $translatedJson = trim($translatedJson);
+
+        // Remove markdown code fences (```json and ```)
+        $translatedJson = preg_replace('/^```(?:json)?\s*|\s*```$/s', '', $translatedJson);
+
+        // Remove triple quotes that Claude sometimes adds
+        $translatedJson = preg_replace('/^"""\s*|\s*"""$/s', '', $translatedJson);
+
+        // Trim again after cleanup
+        $translatedJson = trim($translatedJson);
+
+        // Log what we're trying to parse (first 500 chars for debugging)
+        $this->logger->debug('AnthropicClient: Attempting to parse JSON', [
+            'preview' => substr($translatedJson, 0, 500),
+            'length' => strlen($translatedJson)
+        ]);
+
         $translated = json_decode($translatedJson, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             $this->logger->error('Failed to parse Claude translation response as JSON', [
                 'response' => $translatedJson,
-                'error' => json_last_error_msg()
+                'error' => json_last_error_msg(),
+                'firstChars' => substr($translatedJson, 0, 100),
+                'lastChars' => substr($translatedJson, -100)
             ]);
-            throw new \RuntimeException('Failed to parse translation response');
+            throw new \RuntimeException('Failed to parse translation response: ' . json_last_error_msg());
         }
 
         return $translated;
