@@ -305,7 +305,7 @@ class TranslationService
             return ['success' => true, 'message' => 'No snippets found in source set'];
         }
 
-        // Batch translate all snippets
+        // Batch translate all snippets in chunks
         $textsToTranslate = [];
         $snippetKeyMap = [];
 
@@ -322,16 +322,36 @@ class TranslationService
             return ['success' => true, 'message' => 'No translatable content found'];
         }
 
-        try {
-            $translatedTexts = $this->anthropicClient->translateBatch($textsToTranslate, $targetIso, $systemPrompt);
-        } catch (\Exception $e) {
-            throw new \RuntimeException('Translation failed: ' . $e->getMessage());
+        $chunks = array_chunk($textsToTranslate, 50, true);
+        $translatedTexts = [];
+        $errors = [];
+
+        foreach ($chunks as $chunk) {
+            try {
+                $chunkResult = $this->anthropicClient->translateBatch($chunk, $targetIso, $systemPrompt);
+                $translatedTexts = array_merge($translatedTexts, $chunkResult);
+            } catch (\Exception $e) {
+                $this->logger->error('TranslationService: Chunk translation failed', [
+                    'error' => $e->getMessage(),
+                    'chunkSize' => count($chunk)
+                ]);
+                // Continue with next chunk, but log error
+                // We could also add placeholder errors for these keys
+                foreach (array_keys($chunk) as $key) {
+                    $errors[$key] = $e->getMessage();
+                }
+            }
         }
 
         // Save translated snippets
         $successCount = 0;
-        $errorCount = 0;
+        $errorCount = count($errors);
         $results = [];
+
+        // Add errors from failed chunks
+        foreach ($errors as $key => $message) {
+            $results[$key] = ['success' => false, 'error' => $message];
+        }
 
         foreach ($translatedTexts as $key => $translatedValue) {
             try {

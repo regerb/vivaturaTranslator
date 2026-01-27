@@ -355,8 +355,10 @@ Component.register('vivatura-translator-dashboard', {
             this.snippetSets = response.data.snippetSets || [];
         },
 
-        async onSourceSnippetSetChange() {
-            // v-model updates sourceSnippetSet automatically
+        async onSourceSnippetSetChange(value) {
+            // Ensure we use the selected value immediately
+            this.sourceSnippetSet = value;
+
             if (this.sourceSnippetSet) {
                 await this.loadSnippets();
             } else {
