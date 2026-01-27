@@ -279,6 +279,80 @@
                     </div>
                 </sw-alert>
 
+                <sw-alert v-if="!sourceSnippetSet && snippetFiles.length > 0" variant="warning" style="margin-top: 16px;">
+                    <strong>{{ $tc('vivatura-translator.dashboard.snippetFilesFound') }}</strong>
+                    <p>{{ $tc('vivatura-translator.dashboard.snippetFilesHint') }}</p>
+
+                    <div style="margin-top: 16px;">
+                        <sw-container columns="1fr 1fr auto" gap="16px">
+                            <sw-select-field
+                                v-model="snippetFilesSourceLang"
+                                :label="$tc('vivatura-translator.dashboard.bulkSourceLanguage')"
+                            >
+                                <option value="de-DE">Deutsch (de-DE)</option>
+                                <option value="en-GB">English (en-GB)</option>
+                            </sw-select-field>
+
+                            <sw-select-field
+                                v-model="snippetFilesTargetLang"
+                                :label="$tc('vivatura-translator.dashboard.bulkTargetLanguage')"
+                            >
+                                <option value="en-GB">English (en-GB)</option>
+                                <option value="fr-FR">Français (fr-FR)</option>
+                                <option value="es-ES">Español (es-ES)</option>
+                                <option value="it-IT">Italiano (it-IT)</option>
+                                <option value="nl-NL">Nederlands (nl-NL)</option>
+                                <option value="pl-PL">Polski (pl-PL)</option>
+                            </sw-select-field>
+
+                            <sw-button
+                                variant="primary"
+                                :disabled="isTranslating"
+                                @click="loadSnippetFiles"
+                            >
+                                {{ $tc('vivatura-translator.dashboard.loadSnippetFiles') }}
+                            </sw-button>
+                        </sw-container>
+
+                        <div v-if="filteredSnippetFiles.length > 0" style="margin-top: 20px;">
+                            <h4>{{ $tc('vivatura-translator.dashboard.snippetFilesAvailable') }}</h4>
+                            <div v-for="source in filteredSnippetFiles" :key="source.name" style="margin-bottom: 20px;">
+                                <h5>{{ source.name }}</h5>
+                                <sw-data-grid
+                                    :dataSource="source.files"
+                                    :columns="[
+                                        { property: 'filename', label: $tc('vivatura-translator.dashboard.filename'), primary: true },
+                                        { property: 'snippetCount', label: $tc('vivatura-translator.dashboard.snippetCount'), width: '120px' },
+                                        { property: 'language', label: $tc('vivatura-translator.dashboard.language'), width: '100px' }
+                                    ]"
+                                    :showSelection="true"
+                                    :showActions="true"
+                                    :identifier="'snippet-files-' + source.name"
+                                >
+                                    <template #actions="{ item }">
+                                        <sw-button
+                                            size="small"
+                                            @click="translateSnippetFile(item)"
+                                            :disabled="isTranslating"
+                                        >
+                                            {{ $tc('vivatura-translator.dashboard.translate') }}
+                                        </sw-button>
+                                    </template>
+                                </sw-data-grid>
+                            </div>
+
+                            <sw-button
+                                variant="primary"
+                                @click="translateAllSnippetFiles"
+                                :disabled="isTranslating"
+                                style="margin-top: 16px;"
+                            >
+                                {{ $tc('vivatura-translator.dashboard.translateAllFiles') }}
+                            </sw-button>
+                        </div>
+                    </div>
+                </sw-alert>
+
                 <div v-if="sourceSnippetSet">
                     <sw-simple-search-field
                         v-model="snippetSearch"

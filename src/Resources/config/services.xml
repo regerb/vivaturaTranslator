@@ -28,6 +28,11 @@
         <!-- Content Extractor -->
         <service id="Vivatura\VivaturaTranslator\Service\ContentExtractor"/>
 
+        <!-- Snippet File Scanner -->
+        <service id="Vivatura\VivaturaTranslator\Service\SnippetFileScanner">
+            <argument>%kernel.project_dir%</argument>
+        </service>
+
         <!-- Message Handler for async translation -->
         <service id="Vivatura\VivaturaTranslator\MessageHandler\TranslationMessageHandler">
             <argument type="service" id="Vivatura\VivaturaTranslator\Service\TranslationService"/>
@@ -46,6 +51,7 @@
             <argument type="service" id="snippet.repository"/>
             <argument type="service" id="viv_translator_job.repository"/>
             <argument type="service" id="messenger.default_bus"/>
+            <argument type="service" id="Vivatura\VivaturaTranslator\Service\SnippetFileScanner"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>

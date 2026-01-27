@@ -17,6 +17,7 @@ use Vivatura\VivaturaTranslator\Message\TranslateCmsPageMessage;
 use Vivatura\VivaturaTranslator\Message\TranslateProductMessage;
 use Vivatura\VivaturaTranslator\Message\TranslateSnippetSetMessage;
 use Vivatura\VivaturaTranslator\Service\TranslationService;
+use Vivatura\VivaturaTranslator\Service\SnippetFileScanner;
 
 #[Route(defaults: ['_routeScope' => ['api']])]
 class TranslationController extends AbstractController
@@ -29,7 +30,8 @@ class TranslationController extends AbstractController
         private readonly EntityRepository $snippetSetRepository,
         private readonly EntityRepository $snippetRepository,
         private readonly EntityRepository $translationJobRepository,
-        private readonly MessageBusInterface $messageBus
+        private readonly MessageBusInterface $messageBus,
+        private readonly SnippetFileScanner $snippetFileScanner
     ) {
     }
 
@@ -557,6 +559,134 @@ class TranslationController extends AbstractController
         } catch (\Exception $e) {
             return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
+    }
+
+    // ========================================
+    // SNIPPET FILE ENDPOINTS
+    // ========================================
+
+    #[Route(
+        path: '/api/_action/vivatura-translator/snippet-files',
+        name: 'api.action.vivatura_translator.snippet_files',
+        defaults: ['_acl' => []],
+        methods: ['GET']
+    )]
+    public function getSnippetFiles(Request $request, Context $context): JsonResponse
+    {
+        try {
+            $language = $request->query->get('language');
+
+            if ($language) {
+                $files = $this->snippetFileScanner->findByLanguage($language);
+            } else {
+                $files = $this->snippetFileScanner->findSnippetFiles();
+            }
+
+            return new JsonResponse([
+                'success' => true,
+                'snippetFiles' => $files
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[Route(
+        path: '/api/_action/vivatura-translator/translate-snippet-file',
+        name: 'api.action.vivatura_translator.translate_snippet_file',
+        defaults: ['_acl' => []],
+        methods: ['POST']
+    )]
+    public function translateSnippetFile(Request $request, Context $context): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $sourceFilePath = $data['sourceFilePath'] ?? null;
+        $targetLanguage = $data['targetLanguage'] ?? null;
+
+        if (empty($sourceFilePath) || empty($targetLanguage)) {
+            return new JsonResponse([
+                'error' => 'Source file path and target language are required'
+            ], 400);
+        }
+
+        try {
+            // Read source snippets
+            $sourceSnippets = $this->snippetFileScanner->readSnippetFile($sourceFilePath);
+
+            if (empty($sourceSnippets)) {
+                return new JsonResponse([
+                    'success' => true,
+                    'message' => 'No snippets found in source file'
+                ]);
+            }
+
+            // Get system prompt for target language
+            $systemPrompt = $this->getSystemPromptForLanguage($targetLanguage, $context);
+
+            // Translate in chunks (reuse existing logic from TranslationService)
+            $chunks = array_chunk($sourceSnippets, 10, true);
+            $translatedSnippets = [];
+            $errors = [];
+
+            foreach ($chunks as $chunkIndex => $chunk) {
+                try {
+                    // Use AnthropicClient through TranslationService
+                    $chunkResult = $this->translationService->translateBatch($chunk, $targetLanguage, $systemPrompt);
+                    $translatedSnippets = array_merge($translatedSnippets, $chunkResult);
+                } catch (\Exception $e) {
+                    // Log and continue
+                    foreach (array_keys($chunk) as $key) {
+                        $errors[$key] = $e->getMessage();
+                    }
+                }
+            }
+
+            // Generate target file path
+            $targetFilePath = $this->generateTargetFilePath($sourceFilePath, $targetLanguage);
+
+            // Write translated snippets
+            $this->snippetFileScanner->writeSnippetFile($targetFilePath, $translatedSnippets);
+
+            return new JsonResponse([
+                'success' => true,
+                'translated' => count($translatedSnippets),
+                'errors' => count($errors),
+                'total' => count($sourceSnippets),
+                'targetFile' => $targetFilePath
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function getSystemPromptForLanguage(string $language, Context $context): string
+    {
+        // Try to find language ID by ISO
+        $criteria = new Criteria();
+        $criteria->addAssociation('locale');
+
+        $languages = $this->languageRepository->search($criteria, $context);
+
+        foreach ($languages as $lang) {
+            if ($lang->getLocale()?->getCode() === $language) {
+                // Would need access to languagePromptRepository - simplified for now
+                return 'You are a professional translator for e-commerce content. Translate precisely and maintain the tone and style of the original. Return only the translation, no explanations.';
+            }
+        }
+
+        return 'You are a professional translator for e-commerce content. Translate precisely and maintain the tone and style of the original. Return only the translation, no explanations.';
+    }
+
+    private function generateTargetFilePath(string $sourceFilePath, string $targetLanguage): string
+    {
+        // Replace language code in filename
+        // Example: storefront.de-DE.json -> storefront.fr-FR.json
+        return preg_replace('/\.([a-z]{2}-[A-Z]{2})\.json$/', '.' . $targetLanguage . '.json', $sourceFilePath);
     }
 
     // ========================================

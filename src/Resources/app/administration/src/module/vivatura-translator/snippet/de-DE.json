@@ -39,7 +39,17 @@
             "bulkTranslateHint": "Übersetzt automatisch alle passenden Snippet-Sets von einer Sprache in eine andere (z.B. alle de-DE Sets → fr-FR Sets)",
             "bulkSourceLanguage": "Von Sprache",
             "bulkTargetLanguage": "Nach Sprache",
-            "translateAllSets": "Alle Sets übersetzen"
+            "translateAllSets": "Alle Sets übersetzen",
+            "snippetFilesFound": "Snippet-Dateien gefunden!",
+            "snippetFilesHint": "Es wurden Plugin-Snippet-Dateien gefunden, die nicht in der Datenbank sind. Sie können diese direkt übersetzen.",
+            "loadSnippetFiles": "Dateien laden",
+            "snippetFilesAvailable": "Verfügbare Snippet-Dateien:",
+            "filename": "Dateiname",
+            "snippetCount": "Anzahl Snippets",
+            "language": "Sprache",
+            "translate": "Übersetzen",
+            "translateAllFiles": "Alle Dateien übersetzen",
+            "noSnippetFilesFound": "Keine Snippet-Dateien für diese Sprache gefunden"
         },
         "button": {
             "translate": "Mit KI übersetzen"

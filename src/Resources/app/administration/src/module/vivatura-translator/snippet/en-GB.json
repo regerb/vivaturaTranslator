@@ -39,7 +39,17 @@
             "bulkTranslateHint": "Automatically translates all matching snippet sets from one language to another (e.g. all de-DE sets → fr-FR sets)",
             "bulkSourceLanguage": "From language",
             "bulkTargetLanguage": "To language",
-            "translateAllSets": "Translate all sets"
+            "translateAllSets": "Translate all sets",
+            "snippetFilesFound": "Snippet files found!",
+            "snippetFilesHint": "Plugin snippet files were found that are not in the database. You can translate them directly.",
+            "loadSnippetFiles": "Load files",
+            "snippetFilesAvailable": "Available snippet files:",
+            "filename": "Filename",
+            "snippetCount": "Snippet count",
+            "language": "Language",
+            "translate": "Translate",
+            "translateAllFiles": "Translate all files",
+            "noSnippetFilesFound": "No snippet files found for this language"
         },
         "button": {
             "translate": "Translate with AI"

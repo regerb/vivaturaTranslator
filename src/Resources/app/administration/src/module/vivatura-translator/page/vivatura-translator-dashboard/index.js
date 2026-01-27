@@ -63,6 +63,12 @@ Component.register('vivatura-translator-dashboard', {
             bulkSourceIso: 'de-DE',
             bulkTargetIso: 'fr-FR',
 
+            // Snippet files
+            snippetFiles: [],
+            filteredSnippetFiles: [],
+            snippetFilesSourceLang: 'de-DE',
+            snippetFilesTargetLang: 'fr-FR',
+
             // Translation
             isTranslating: false,
             translationProgress: 0,
@@ -133,6 +139,7 @@ Component.register('vivatura-translator-dashboard', {
 
     created() {
         this.loadInitialData();
+        this.loadAllSnippetFiles(); // Load snippet files on init
     },
 
     methods: {
@@ -151,6 +158,107 @@ Component.register('vivatura-translator-dashboard', {
                     title: this.$tc('vivatura-translator.notification.errorTitle'),
                     message: error.message
                 });
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async loadAllSnippetFiles() {
+            try {
+                const response = await this.httpClient.get('/_action/vivatura-translator/snippet-files', {
+                    headers: this.authHeaders
+                });
+                this.snippetFiles = response.data.snippetFiles || [];
+            } catch (error) {
+                console.error('Failed to load snippet files:', error);
+            }
+        },
+
+        async loadSnippetFiles() {
+            try {
+                const response = await this.httpClient.get(
+                    `/_action/vivatura-translator/snippet-files?language=${this.snippetFilesSourceLang}`,
+                    { headers: this.authHeaders }
+                );
+                this.filteredSnippetFiles = response.data.snippetFiles || [];
+
+                if (this.filteredSnippetFiles.length === 0) {
+                    this.createNotificationWarning({
+                        title: this.$tc('vivatura-translator.notification.warningTitle'),
+                        message: this.$tc('vivatura-translator.dashboard.noSnippetFilesFound')
+                    });
+                }
+            } catch (error) {
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.message
+                });
+            }
+        },
+
+        async translateSnippetFile(file) {
+            if (!confirm(`Translate ${file.filename} from ${file.language} to ${this.snippetFilesTargetLang}?`)) {
+                return;
+            }
+
+            this.isTranslating = true;
+
+            try {
+                const response = await this.httpClient.post('/_action/vivatura-translator/translate-snippet-file', {
+                    sourceFilePath: file.fullPath,
+                    targetLanguage: this.snippetFilesTargetLang
+                }, { headers: this.authHeaders });
+
+                this.isTranslating = false;
+
+                if (response.data.success) {
+                    this.createNotificationSuccess({
+                        title: this.$tc('vivatura-translator.notification.successTitle'),
+                        message: `Translated ${response.data.translated}/${response.data.total} snippets to ${response.data.targetFile}`
+                    });
+                }
+            } catch (error) {
+                this.isTranslating = false;
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.response?.data?.error || error.message
+                });
+            }
+        },
+
+        async translateAllSnippetFiles() {
+            const totalFiles = this.filteredSnippetFiles.reduce((sum, source) => sum + source.files.length, 0);
+
+            if (!confirm(`Translate all ${totalFiles} snippet files from ${this.snippetFilesSourceLang} to ${this.snippetFilesTargetLang}?`)) {
+                return;
+            }
+
+            this.isTranslating = true;
+            let translated = 0;
+            let failed = 0;
+
+            for (const source of this.filteredSnippetFiles) {
+                for (const file of source.files) {
+                    try {
+                        await this.httpClient.post('/_action/vivatura-translator/translate-snippet-file', {
+                            sourceFilePath: file.fullPath,
+                            targetLanguage: this.snippetFilesTargetLang
+                        }, { headers: this.authHeaders });
+                        translated++;
+                    } catch (error) {
+                        console.error(`Failed to translate ${file.filename}:`, error);
+                        failed++;
+                    }
+                }
+            }
+
+            this.isTranslating = false;
+
+            this.createNotificationSuccess({
+                title: this.$tc('vivatura-translator.notification.successTitle'),
+                message: `Translated ${translated} files successfully (${failed} failed)`
+            });
+        },
             } finally {
                 this.isLoading = false;
             }
