@@ -196,8 +196,19 @@ Component.register('vivatura-translator-dashboard', {
             }
         },
 
-        async translateSnippetFile(file) {
-            console.log('[SnippetFileTranslation] Starting translation for:', file.filename);
+        async translateSnippetFile(file, batchSize = null) {
+            console.log('[SnippetFileTranslation] Starting translation for:', file.filename, {
+                snippetCount: file.snippetCount,
+                batchSize
+            });
+
+            // Automatically use batching for large files (>50 snippets)
+            const shouldBatch = !batchSize && file.snippetCount > 50;
+
+            if (shouldBatch) {
+                console.log('[SnippetFileTranslation] Large file detected, using batch translation');
+                return await this.translateSnippetFileInBatches(file);
+            }
 
             if (!confirm(`Translate ${file.filename} (${file.snippetCount} snippets) from ${file.language} to ${this.snippetFilesTargetLang}?`)) {
                 return;
@@ -215,7 +226,8 @@ Component.register('vivatura-translator-dashboard', {
 
                 const response = await this.httpClient.post('/_action/vivatura-translator/translate-snippet-file', {
                     sourceFilePath: file.fullPath,
-                    targetLanguage: this.snippetFilesTargetLang
+                    targetLanguage: this.snippetFilesTargetLang,
+                    batchSize: batchSize || null
                 }, {
                     headers: this.authHeaders,
                     timeout: 300000 // 5 minutes timeout
@@ -235,6 +247,114 @@ Component.register('vivatura-translator-dashboard', {
             } catch (error) {
                 const duration = ((Date.now() - startTime) / 1000).toFixed(1);
                 console.error(`[SnippetFileTranslation] Failed after ${duration}s:`, error);
+
+                this.isTranslating = false;
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: `✗ ${file.filename}: ${error.response?.data?.error || error.message}`
+                });
+            }
+        },
+
+        async translateSnippetFileInBatches(file) {
+            console.log('[SnippetFileTranslation] Starting batch-mode translation for large file:', file.filename);
+
+            if (!confirm(`Translate ${file.filename} (${file.snippetCount} snippets) from ${file.language} to ${this.snippetFilesTargetLang}?\n\nThis is a large file and will be processed in batches.`)) {
+                return;
+            }
+
+            this.isTranslating = true;
+            const startTime = Date.now();
+
+            try {
+                // Read the file first to get all snippets
+                const readResponse = await this.httpClient.post('/_action/vivatura-translator/read-snippet-file', {
+                    filePath: file.fullPath
+                }, { headers: this.authHeaders });
+
+                const allSnippets = readResponse.data.snippets || {};
+                const snippetKeys = Object.keys(allSnippets);
+                const totalSnippets = snippetKeys.length;
+
+                // Split into batches of 50 snippets
+                const batchSize = 50;
+                const batches = [];
+                for (let i = 0; i < snippetKeys.length; i += batchSize) {
+                    const batchKeys = snippetKeys.slice(i, i + batchSize);
+                    const batchSnippets = {};
+                    batchKeys.forEach(key => {
+                        batchSnippets[key] = allSnippets[key];
+                    });
+                    batches.push(batchSnippets);
+                }
+
+                console.log(`[SnippetFileTranslation] Split into ${batches.length} batches of ~${batchSize} snippets`);
+
+                let allTranslated = {};
+                let totalTranslated = 0;
+                let totalErrors = 0;
+
+                for (let i = 0; i < batches.length; i++) {
+                    const batchNum = i + 1;
+                    const progress = Math.round((batchNum / batches.length) * 100);
+
+                    console.log(`[SnippetFileTranslation] Processing batch ${batchNum}/${batches.length} (${progress}%)`);
+                    this.translationProgress = progress;
+
+                    try {
+                        const batchResponse = await this.httpClient.post('/_action/vivatura-translator/translate-snippet-batch', {
+                            snippets: batches[i],
+                            targetLanguage: this.snippetFilesTargetLang
+                        }, {
+                            headers: this.authHeaders,
+                            timeout: 180000 // 3 minutes per batch
+                        });
+
+                        if (batchResponse.data.success) {
+                            allTranslated = { ...allTranslated, ...batchResponse.data.translated };
+                            totalTranslated += batchResponse.data.translatedCount || 0;
+                            totalErrors += batchResponse.data.errors || 0;
+                        }
+
+                        // Small delay between batches
+                        if (i < batches.length - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                    } catch (error) {
+                        console.error(`[SnippetFileTranslation] Batch ${batchNum} failed:`, error);
+                        totalErrors += Object.keys(batches[i]).length;
+                    }
+                }
+
+                // Write all translated snippets to target file
+                const targetFilePath = file.fullPath.replace(
+                    new RegExp(`\\.${file.language}\\.json$`),
+                    `.${this.snippetFilesTargetLang}.json`
+                );
+
+                await this.httpClient.post('/_action/vivatura-translator/write-snippet-file', {
+                    filePath: targetFilePath,
+                    snippets: allTranslated
+                }, { headers: this.authHeaders });
+
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                console.log(`[SnippetFileTranslation] Batch translation completed in ${duration}s`, {
+                    totalSnippets,
+                    translated: totalTranslated,
+                    errors: totalErrors
+                });
+
+                this.isTranslating = false;
+                this.translationProgress = 100;
+
+                this.createNotificationSuccess({
+                    title: this.$tc('vivatura-translator.notification.successTitle'),
+                    message: `✓ ${file.filename}: ${totalTranslated}/${totalSnippets} snippets translated in ${duration}s (${totalErrors} errors)`
+                });
+
+            } catch (error) {
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                console.error(`[SnippetFileTranslation] Batch translation failed after ${duration}s:`, error);
 
                 this.isTranslating = false;
                 this.createNotificationError({

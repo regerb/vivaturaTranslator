@@ -704,6 +704,108 @@ class TranslationController extends AbstractController
         return preg_replace('/\.([a-z]{2}-[A-Z]{2})\.json$/', '.' . $targetLanguage . '.json', $sourceFilePath);
     }
 
+    #[Route(
+        path: '/api/_action/vivatura-translator/read-snippet-file',
+        name: 'api.action.vivatura_translator.read_snippet_file',
+        defaults: ['_acl' => []],
+        methods: ['POST']
+    )]
+    public function readSnippetFile(Request $request, Context $context): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $filePath = $data['filePath'] ?? null;
+
+        if (empty($filePath)) {
+            return new JsonResponse(['error' => 'File path is required'], 400);
+        }
+
+        try {
+            $snippets = $this->snippetFileScanner->readSnippetFile($filePath);
+
+            return new JsonResponse([
+                'success' => true,
+                'snippets' => $snippets,
+                'count' => count($snippets)
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[Route(
+        path: '/api/_action/vivatura-translator/write-snippet-file',
+        name: 'api.action.vivatura_translator.write_snippet_file',
+        defaults: ['_acl' => []],
+        methods: ['POST']
+    )]
+    public function writeSnippetFile(Request $request, Context $context): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $filePath = $data['filePath'] ?? null;
+        $snippets = $data['snippets'] ?? null;
+
+        if (empty($filePath) || empty($snippets)) {
+            return new JsonResponse(['error' => 'File path and snippets are required'], 400);
+        }
+
+        try {
+            $this->snippetFileScanner->writeSnippetFile($filePath, $snippets);
+
+            return new JsonResponse([
+                'success' => true,
+                'filePath' => $filePath,
+                'count' => count($snippets)
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[Route(
+        path: '/api/_action/vivatura-translator/translate-snippet-batch',
+        name: 'api.action.vivatura_translator.translate_snippet_batch',
+        defaults: ['_acl' => []],
+        methods: ['POST']
+    )]
+    public function translateSnippetBatch(Request $request, Context $context): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $snippets = $data['snippets'] ?? null;
+        $targetLanguage = $data['targetLanguage'] ?? null;
+
+        if (empty($snippets) || empty($targetLanguage)) {
+            return new JsonResponse(['error' => 'Snippets and target language are required'], 400);
+        }
+
+        try {
+            $systemPrompt = $this->getSystemPromptForLanguage($targetLanguage, $context);
+
+            // Translate in smaller chunks
+            $chunks = array_chunk($snippets, 5, true);
+            $translated = [];
+            $errors = 0;
+
+            foreach ($chunks as $chunk) {
+                try {
+                    $result = $this->translationService->translateBatch($chunk, $targetLanguage, $systemPrompt);
+                    $translated = array_merge($translated, $result);
+                } catch (\Exception $e) {
+                    $errors += count($chunk);
+                }
+            }
+
+            return new JsonResponse([
+                'success' => true,
+                'translated' => $translated,
+                'translatedCount' => count($translated),
+                'errors' => $errors,
+                'total' => count($snippets)
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
     // ========================================
     // TRANSLATION STATUS / PROGRESS
     // ========================================
