@@ -77,12 +77,19 @@ class AnthropicClient
         }
 
         // Build batch request with JSON structure for easy parsing
-        $jsonInput = json_encode($texts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        $jsonInput = json_encode($texts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         $userPrompt = <<<PROMPT
-Translate the following JSON object values from German to {$targetLanguage}.
+Translate the following JSON object values to {$targetLanguage}.
 Keep the JSON keys unchanged, only translate the values.
 Return ONLY the translated JSON object, no additional text.
+
+IMPORTANT RULES FOR HTML AND TWIG:
+- The values may contain HTML tags (like <div>, <p>, <span>) and Twig syntax (like {{ variable }}, {% block %}).
+- ONLY translate the human-readable text content inside the HTML tags.
+- Do NOT translate HTML tag names, attributes (class, id, style, etc.), or values within attributes.
+- Do NOT translate any Twig variable names or block definitions.
+- KEEP all HTML structure and Twig syntax exactly as it is.
 
 ```json
 {$jsonInput}
@@ -164,8 +171,15 @@ PROMPT;
     private function buildUserPrompt(string $text, string $targetLanguage): string
     {
         return <<<PROMPT
-Translate the following text from German to {$targetLanguage}. 
+Translate the following text to {$targetLanguage}.
 Return ONLY the translated text, no explanations or additional content.
+
+IMPORTANT RULES FOR HTML AND TWIG:
+- The text may contain HTML tags (like <div>, <p>, <span>) and Twig syntax (like {{ variable }}, {% block %}).
+- ONLY translate the human-readable text content inside the HTML tags.
+- Do NOT translate HTML tag names, attributes (class, id, style, etc.), or values within attributes.
+- Do NOT translate any Twig variable names or block definitions.
+- KEEP all HTML structure and Twig syntax exactly as it is.
 
 Text to translate:
 {$text}
