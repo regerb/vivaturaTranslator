@@ -322,23 +322,67 @@ class TranslationService
             return ['success' => true, 'message' => 'No translatable content found'];
         }
 
-        $chunks = array_chunk($textsToTranslate, 50, true);
+        // Reduce chunk size to avoid API errors - smaller chunks are more reliable
+        $chunks = array_chunk($textsToTranslate, 10, true);
         $translatedTexts = [];
         $errors = [];
+        $chunkNumber = 0;
+        $totalChunks = count($chunks);
+
+        $this->logger->info('TranslationService: Starting snippet translation', [
+            'totalSnippets' => count($textsToTranslate),
+            'totalChunks' => $totalChunks,
+            'chunkSize' => 10
+        ]);
 
         foreach ($chunks as $chunk) {
+            $chunkNumber++;
+
             try {
+                $this->logger->info('TranslationService: Processing chunk', [
+                    'chunkNumber' => $chunkNumber,
+                    'totalChunks' => $totalChunks,
+                    'chunkKeys' => array_keys($chunk)
+                ]);
+
                 $chunkResult = $this->anthropicClient->translateBatch($chunk, $targetIso, $systemPrompt);
                 $translatedTexts = array_merge($translatedTexts, $chunkResult);
+
+                $this->logger->info('TranslationService: Chunk translated successfully', [
+                    'chunkNumber' => $chunkNumber,
+                    'translatedKeys' => array_keys($chunkResult)
+                ]);
+
+                // Small delay between chunks to avoid rate limiting
+                if ($chunkNumber < $totalChunks) {
+                    usleep(500000); // 0.5 second delay
+                }
             } catch (\Exception $e) {
                 $this->logger->error('TranslationService: Chunk translation failed', [
                     'error' => $e->getMessage(),
-                    'chunkSize' => count($chunk)
+                    'chunkNumber' => $chunkNumber,
+                    'chunkSize' => count($chunk),
+                    'chunkKeys' => array_keys($chunk)
                 ]);
-                // Continue with next chunk, but log error
-                // We could also add placeholder errors for these keys
-                foreach (array_keys($chunk) as $key) {
-                    $errors[$key] = $e->getMessage();
+
+                // Try to translate failed chunk with even smaller size (one by one)
+                $this->logger->info('TranslationService: Retrying failed chunk with individual translations');
+
+                foreach ($chunk as $key => $value) {
+                    try {
+                        $singleResult = $this->anthropicClient->translate($value, $targetIso, $systemPrompt);
+                        $translatedTexts[$key] = $singleResult;
+
+                        $this->logger->info('TranslationService: Individual snippet translated', [
+                            'key' => $key
+                        ]);
+                    } catch (\Exception $singleE) {
+                        $this->logger->error('TranslationService: Individual snippet translation failed', [
+                            'key' => $key,
+                            'error' => $singleE->getMessage()
+                        ]);
+                        $errors[$key] = $singleE->getMessage();
+                    }
                 }
             }
         }
