@@ -366,6 +366,10 @@ Component.register('vivatura-translator-dashboard', {
             }
         },
 
+        onTargetSnippetSetChange(value) {
+            this.targetSnippetSet = value;
+        },
+
         async loadSnippets() {
             if (!this.sourceSnippetSet) return;
 

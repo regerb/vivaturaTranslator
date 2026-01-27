@@ -204,8 +204,8 @@
                 <template #toolbar>
                     <sw-container columns="1fr 1fr auto" gap="16px">
                         <sw-single-select
-                            v-model="sourceSnippetSet"
-                            @change="onSourceSnippetSetChange"
+                            :value="sourceSnippetSet"
+                            @update:value="onSourceSnippetSetChange"
                             :options="snippetSets"
                             labelProperty="name"
                             valueProperty="id"
@@ -213,7 +213,8 @@
                         >
                         </sw-single-select>
                         <sw-single-select
-                            v-model="targetSnippetSet"
+                            :value="targetSnippetSet"
+                            @update:value="onTargetSnippetSetChange"
                             :options="snippetSets"
                             labelProperty="name"
                             valueProperty="id"
