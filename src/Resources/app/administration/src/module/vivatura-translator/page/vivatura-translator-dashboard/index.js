@@ -259,10 +259,6 @@ Component.register('vivatura-translator-dashboard', {
                 message: `Translated ${translated} files successfully (${failed} failed)`
             });
         },
-            } finally {
-                this.isLoading = false;
-            }
-        },
 
         async loadStatus() {
             const response = await this.httpClient.get('/_action/vivatura-translator/translation-status', { headers: this.authHeaders });
