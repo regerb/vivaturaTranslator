@@ -335,6 +335,25 @@ class TranslationService
             'chunkSize' => 10
         ]);
 
+        // TEMPORARY DEBUG: Log start
+        $debugLog = sprintf(
+            "[%s] Starting Snippet Translation:\n" .
+            "  - Source Set ID: %s\n" .
+            "  - Target Set ID: %s\n" .
+            "  - Target ISO: %s\n" .
+            "  - Total snippets to translate: %d\n" .
+            "  - Total chunks: %d\n" .
+            "  - First 5 keys: %s\n\n",
+            date('Y-m-d H:i:s'),
+            $sourceSetId,
+            $targetSetId,
+            $targetIso,
+            count($textsToTranslate),
+            $totalChunks,
+            implode(', ', array_slice(array_keys($textsToTranslate), 0, 5))
+        );
+        @file_put_contents(__DIR__ . '/../../vivatura_translation_debug.log', $debugLog, FILE_APPEND);
+
         foreach ($chunks as $chunk) {
             $chunkNumber++;
 
@@ -345,6 +364,16 @@ class TranslationService
                     'chunkKeys' => array_keys($chunk)
                 ]);
 
+                // TEMPORARY DEBUG: Log chunk progress
+                $debugLog = sprintf(
+                    "[%s] Processing chunk %d/%d (%d snippets)\n",
+                    date('Y-m-d H:i:s'),
+                    $chunkNumber,
+                    $totalChunks,
+                    count($chunk)
+                );
+                @file_put_contents(__DIR__ . '/../../vivatura_translation_debug.log', $debugLog, FILE_APPEND);
+
                 $chunkResult = $this->anthropicClient->translateBatch($chunk, $targetIso, $systemPrompt);
                 $translatedTexts = array_merge($translatedTexts, $chunkResult);
 
@@ -352,6 +381,16 @@ class TranslationService
                     'chunkNumber' => $chunkNumber,
                     'translatedKeys' => array_keys($chunkResult)
                 ]);
+
+                // TEMPORARY DEBUG: Log chunk success
+                $debugLog = sprintf(
+                    "[%s] ✓ Chunk %d/%d completed successfully (%d snippets translated)\n",
+                    date('Y-m-d H:i:s'),
+                    $chunkNumber,
+                    $totalChunks,
+                    count($chunkResult)
+                );
+                @file_put_contents(__DIR__ . '/../../vivatura_translation_debug.log', $debugLog, FILE_APPEND);
 
                 // Small delay between chunks to avoid rate limiting
                 if ($chunkNumber < $totalChunks) {
@@ -365,11 +404,30 @@ class TranslationService
                     'chunkKeys' => array_keys($chunk)
                 ]);
 
+                // TEMPORARY DEBUG: Log chunk failure
+                $debugLog = sprintf(
+                    "[%s] ✗ Chunk %d/%d FAILED: %s\n",
+                    date('Y-m-d H:i:s'),
+                    $chunkNumber,
+                    $totalChunks,
+                    $e->getMessage()
+                );
+                @file_put_contents(__DIR__ . '/../../vivatura_translation_debug.log', $debugLog, FILE_APPEND);
+
                 // Try to translate failed chunk with even smaller size (one by one)
                 $this->logger->info('TranslationService: Retrying failed chunk with individual translations', [
                     'chunkNumber' => $chunkNumber,
                     'itemsToRetry' => count($chunk)
                 ]);
+
+                // TEMPORARY DEBUG: Log retry start
+                $debugLog = sprintf(
+                    "[%s] → Retrying chunk %d with individual translations (%d items)...\n",
+                    date('Y-m-d H:i:s'),
+                    $chunkNumber,
+                    count($chunk)
+                );
+                @file_put_contents(__DIR__ . '/../../vivatura_translation_debug.log', $debugLog, FILE_APPEND);
 
                 $retrySuccess = 0;
                 $retryFailed = 0;
@@ -434,6 +492,26 @@ class TranslationService
                 ? round(($successCount / count($textsToTranslate)) * 100, 2) . '%'
                 : '0%'
         ]);
+
+        // TEMPORARY DEBUG: Write to file for debugging
+        $debugLog = sprintf(
+            "[%s] Snippet Translation Summary:\n" .
+            "  - Total in source: %d\n" .
+            "  - Successfully translated: %d\n" .
+            "  - Errors: %d\n" .
+            "  - Skipped (empty): %d\n" .
+            "  - Success rate: %s\n" .
+            "  - Failed keys: %s\n\n",
+            date('Y-m-d H:i:s'),
+            count($textsToTranslate),
+            $successCount,
+            $errorCount,
+            $sourceSnippets->count() - count($textsToTranslate),
+            count($textsToTranslate) > 0 ? round(($successCount / count($textsToTranslate)) * 100, 2) . '%' : '0%',
+            !empty($errors) ? implode(', ', array_keys($errors)) : 'none'
+        );
+
+        @file_put_contents(__DIR__ . '/../../vivatura_translation_debug.log', $debugLog, FILE_APPEND);
 
         if ($errorCount > 0) {
             $this->logger->warning('TranslationService: Some snippets failed to translate', [
