@@ -486,15 +486,19 @@ class TranslationController extends AbstractController
         // Count products
         $productCriteria = new Criteria();
         $productCriteria->setLimit(1);
+        $productCriteria->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
         $productTotal = $this->productRepository->search($productCriteria, $context)->getTotal();
 
         // Count CMS pages
         $cmsCriteria = new Criteria();
         $cmsCriteria->setLimit(1);
+        $cmsCriteria->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
         $cmsTotal = $this->cmsPageRepository->search($cmsCriteria, $context)->getTotal();
 
         // Count snippet sets
         $snippetSetCriteria = new Criteria();
+        $snippetSetCriteria->setLimit(1);
+        $snippetSetCriteria->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
         $snippetSetTotal = $this->snippetSetRepository->search($snippetSetCriteria, $context)->getTotal();
 
         return new JsonResponse([

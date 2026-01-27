@@ -355,17 +355,13 @@ Component.register('vivatura-translator-dashboard', {
             this.snippetSets = response.data.snippetSets || [];
         },
 
-        async onSourceSnippetSetChange(value) {
-            this.sourceSnippetSet = value;
+        async onSourceSnippetSetChange() {
+            // v-model updates sourceSnippetSet automatically
             if (this.sourceSnippetSet) {
                 await this.loadSnippets();
             } else {
                 this.snippets = [];
             }
-        },
-
-        onTargetSnippetSetChange(value) {
-            this.targetSnippetSet = value;
         },
 
         async loadSnippets() {
