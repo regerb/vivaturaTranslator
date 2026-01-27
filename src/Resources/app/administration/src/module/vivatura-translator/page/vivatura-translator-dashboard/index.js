@@ -59,6 +59,10 @@ Component.register('vivatura-translator-dashboard', {
             snippetLimit: 100,
             snippetTotal: 0,
 
+            // Bulk snippet translation
+            bulkSourceIso: 'de-DE',
+            bulkTargetIso: 'fr-FR',
+
             // Translation
             isTranslating: false,
             translationProgress: 0,
@@ -117,6 +121,10 @@ Component.register('vivatura-translator-dashboard', {
 
         canTranslateSnippets() {
             return this.sourceSnippetSet && this.targetSnippetSet && this.sourceSnippetSet !== this.targetSnippetSet;
+        },
+
+        canTranslateAllSnippetSets() {
+            return this.bulkSourceIso && this.bulkTargetIso && this.bulkSourceIso !== this.bulkTargetIso;
         }
     },
 
@@ -461,6 +469,45 @@ Component.register('vivatura-translator-dashboard', {
                 }
 
                 this.selectedSnippets = [];
+            } catch (error) {
+                this.isTranslating = false;
+                this.createNotificationError({
+                    title: this.$tc('vivatura-translator.notification.errorTitle'),
+                    message: error.response?.data?.error || error.message
+                });
+            }
+        },
+
+        async translateAllSnippetSets() {
+            if (!this.canTranslateAllSnippetSets) return;
+
+            this.isTranslating = true;
+            this.translationProgress = 0;
+
+            try {
+                const response = await this.httpClient.post('/_action/vivatura-translator/translate-all-snippet-sets', {
+                    sourceIso: this.bulkSourceIso,
+                    targetIso: this.bulkTargetIso
+                }, { headers: this.authHeaders });
+
+                if (response.data.async) {
+                    // Async mode - start polling for job status
+                    this.activeJobIds = Object.values(response.data.jobIds).filter(id => typeof id === 'string');
+
+                    const message = response.data.message ||
+                        `Queued ${response.data.matched} snippet set translations (${response.data.skipped} skipped)`;
+
+                    this.createNotificationInfo({
+                        title: this.$tc('vivatura-translator.notification.infoTitle'),
+                        message: message
+                    });
+                    this.startPolling();
+                } else {
+                    // Sync mode fallback
+                    this.translationResults = response.data;
+                    this.translationProgress = 100;
+                    this.onTranslationComplete(response.data);
+                }
             } catch (error) {
                 this.isTranslating = false;
                 this.createNotificationError({

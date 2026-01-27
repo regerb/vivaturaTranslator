@@ -242,6 +242,41 @@
 
                 <sw-alert v-if="!sourceSnippetSet" variant="info">
                     {{ $tc('vivatura-translator.dashboard.selectSourceSet') }}
+
+                    <div style="margin-top: 16px;">
+                        <strong>{{ $tc('vivatura-translator.dashboard.bulkTranslateTitle') }}</strong>
+                        <p>{{ $tc('vivatura-translator.dashboard.bulkTranslateHint') }}</p>
+
+                        <sw-container columns="1fr 1fr auto" gap="16px" style="margin-top: 12px;">
+                            <sw-select-field
+                                v-model="bulkSourceIso"
+                                :label="$tc('vivatura-translator.dashboard.bulkSourceLanguage')"
+                            >
+                                <option value="de-DE">Deutsch (de-DE)</option>
+                                <option value="en-GB">English (en-GB)</option>
+                            </sw-select-field>
+
+                            <sw-select-field
+                                v-model="bulkTargetIso"
+                                :label="$tc('vivatura-translator.dashboard.bulkTargetLanguage')"
+                            >
+                                <option value="en-GB">English (en-GB)</option>
+                                <option value="fr-FR">Français (fr-FR)</option>
+                                <option value="es-ES">Español (es-ES)</option>
+                                <option value="it-IT">Italiano (it-IT)</option>
+                                <option value="nl-NL">Nederlands (nl-NL)</option>
+                                <option value="pl-PL">Polski (pl-PL)</option>
+                            </sw-select-field>
+
+                            <sw-button
+                                variant="primary"
+                                :disabled="!canTranslateAllSnippetSets || isTranslating"
+                                @click="translateAllSnippetSets"
+                            >
+                                {{ $tc('vivatura-translator.dashboard.translateAllSets') }}
+                            </sw-button>
+                        </sw-container>
+                    </div>
                 </sw-alert>
 
                 <div v-if="sourceSnippetSet">

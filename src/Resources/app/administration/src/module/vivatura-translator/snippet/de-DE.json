@@ -34,7 +34,12 @@
             "translationKey": "Übersetzungsschlüssel",
             "value": "Wert",
             "author": "Autor",
-            "snippetHint": "Leer = alle Snippets übersetzen"
+            "snippetHint": "Leer = alle Snippets übersetzen",
+            "bulkTranslateTitle": "Oder: Alle Snippet-Sets auf einmal übersetzen",
+            "bulkTranslateHint": "Übersetzt automatisch alle passenden Snippet-Sets von einer Sprache in eine andere (z.B. alle de-DE Sets → fr-FR Sets)",
+            "bulkSourceLanguage": "Von Sprache",
+            "bulkTargetLanguage": "Nach Sprache",
+            "translateAllSets": "Alle Sets übersetzen"
         },
         "button": {
             "translate": "Mit KI übersetzen"

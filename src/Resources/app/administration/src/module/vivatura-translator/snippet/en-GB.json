@@ -34,7 +34,12 @@
             "translationKey": "Translation key",
             "value": "Value",
             "author": "Author",
-            "snippetHint": "Empty = translate all snippets"
+            "snippetHint": "Empty = translate all snippets",
+            "bulkTranslateTitle": "Or: Translate all snippet sets at once",
+            "bulkTranslateHint": "Automatically translates all matching snippet sets from one language to another (e.g. all de-DE sets → fr-FR sets)",
+            "bulkSourceLanguage": "From language",
+            "bulkTargetLanguage": "To language",
+            "translateAllSets": "Translate all sets"
         },
         "button": {
             "translate": "Translate with AI"

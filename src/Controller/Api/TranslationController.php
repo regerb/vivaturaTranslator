@@ -417,6 +417,96 @@ class TranslationController extends AbstractController
     }
 
     #[Route(
+        path: '/api/_action/vivatura-translator/translate-all-snippet-sets',
+        name: 'api.action.vivatura_translator.translate_all_snippet_sets',
+        defaults: ['_acl' => []],
+        methods: ['POST']
+    )]
+    public function translateAllSnippetSets(Request $request, Context $context): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $sourceIso = $data['sourceIso'] ?? null;
+        $targetIso = $data['targetIso'] ?? null;
+
+        if (empty($sourceIso) || empty($targetIso)) {
+            return new JsonResponse(['error' => 'Source and target ISO codes are required'], 400);
+        }
+
+        try {
+            // Get all snippet sets for source language
+            $sourceCriteria = new Criteria();
+            $sourceCriteria->addFilter(new EqualsFilter('iso', $sourceIso));
+            $sourceSets = $this->snippetSetRepository->search($sourceCriteria, $context)->getElements();
+
+            // Get all snippet sets for target language
+            $targetCriteria = new Criteria();
+            $targetCriteria->addFilter(new EqualsFilter('iso', $targetIso));
+            $targetSets = $this->snippetSetRepository->search($targetCriteria, $context)->getElements();
+
+            if (empty($sourceSets)) {
+                return new JsonResponse(['error' => "No snippet sets found for source language: $sourceIso"], 404);
+            }
+
+            if (empty($targetSets)) {
+                return new JsonResponse(['error' => "No snippet sets found for target language: $targetIso"], 404);
+            }
+
+            // Match source and target sets by name pattern
+            $jobIds = [];
+            $matched = 0;
+            $skipped = 0;
+
+            foreach ($sourceSets as $sourceSet) {
+                $sourceName = $sourceSet->getName();
+
+                // Try to find matching target set
+                // Strategy: Look for sets with same name pattern (e.g., "BASE de-DE" -> "BASE fr-FR")
+                $targetSet = null;
+                foreach ($targetSets as $candidateSet) {
+                    $targetName = $candidateSet->getName();
+
+                    // Remove language codes from names and compare
+                    $sourceBaseName = preg_replace('/\b[a-z]{2}-[A-Z]{2}\b/', '', $sourceName);
+                    $targetBaseName = preg_replace('/\b[a-z]{2}-[A-Z]{2}\b/', '', $targetName);
+
+                    if (trim($sourceBaseName) === trim($targetBaseName)) {
+                        $targetSet = $candidateSet;
+                        break;
+                    }
+                }
+
+                if ($targetSet) {
+                    // Create translation job for this set pair
+                    $entityId = $sourceSet->getId() . ':' . $targetSet->getId();
+                    $jobId = $this->createTranslationJob('snippet_set', $entityId, [], $context);
+                    $this->messageBus->dispatch(new TranslateSnippetSetMessage(
+                        $jobId,
+                        $sourceSet->getId(),
+                        $targetSet->getId(),
+                        null
+                    ));
+
+                    $jobIds[$sourceName . ' → ' . $targetSet->getName()] = $jobId;
+                    $matched++;
+                } else {
+                    $skipped++;
+                }
+            }
+
+            return new JsonResponse([
+                'success' => true,
+                'async' => true,
+                'jobIds' => $jobIds,
+                'matched' => $matched,
+                'skipped' => $skipped,
+                'message' => "Queued translation for $matched snippet set pairs ($skipped skipped - no matching target set found)"
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[Route(
         path: '/api/_action/vivatura-translator/translate-snippet/{snippetId}',
         name: 'api.action.vivatura_translator.translate_snippet',
         defaults: ['_acl' => []],
