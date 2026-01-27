@@ -366,12 +366,22 @@ class TranslationService
                 ]);
 
                 // Try to translate failed chunk with even smaller size (one by one)
-                $this->logger->info('TranslationService: Retrying failed chunk with individual translations');
+                $this->logger->info('TranslationService: Retrying failed chunk with individual translations', [
+                    'chunkNumber' => $chunkNumber,
+                    'itemsToRetry' => count($chunk)
+                ]);
+
+                $retrySuccess = 0;
+                $retryFailed = 0;
 
                 foreach ($chunk as $key => $value) {
                     try {
+                        // Small delay between individual retries to avoid rate limiting
+                        usleep(200000); // 0.2 second delay
+
                         $singleResult = $this->anthropicClient->translate($value, $targetIso, $systemPrompt);
                         $translatedTexts[$key] = $singleResult;
+                        $retrySuccess++;
 
                         $this->logger->info('TranslationService: Individual snippet translated', [
                             'key' => $key
@@ -382,8 +392,15 @@ class TranslationService
                             'error' => $singleE->getMessage()
                         ]);
                         $errors[$key] = $singleE->getMessage();
+                        $retryFailed++;
                     }
                 }
+
+                $this->logger->info('TranslationService: Retry completed', [
+                    'chunkNumber' => $chunkNumber,
+                    'retrySuccess' => $retrySuccess,
+                    'retryFailed' => $retryFailed
+                ]);
             }
         }
 
@@ -406,6 +423,23 @@ class TranslationService
                 $results[$key] = ['success' => false, 'error' => $e->getMessage()];
                 $errorCount++;
             }
+        }
+
+        $this->logger->info('TranslationService: Snippet translation completed', [
+            'totalSnippetsInSource' => count($textsToTranslate),
+            'successfullyTranslated' => $successCount,
+            'errors' => $errorCount,
+            'skippedEmpty' => $sourceSnippets->count() - count($textsToTranslate),
+            'successRate' => count($textsToTranslate) > 0
+                ? round(($successCount / count($textsToTranslate)) * 100, 2) . '%'
+                : '0%'
+        ]);
+
+        if ($errorCount > 0) {
+            $this->logger->warning('TranslationService: Some snippets failed to translate', [
+                'failedKeys' => array_keys($errors),
+                'errorSummary' => array_count_values(array_values($errors))
+            ]);
         }
 
         return [
