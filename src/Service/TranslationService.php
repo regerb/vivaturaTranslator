@@ -620,6 +620,14 @@ class TranslationService
         return $this->anthropicClient->getAvailableModels();
     }
 
+    /**
+     * Public wrapper for batch translation - used by snippet file translation
+     */
+    public function translateBatch(array $texts, string $targetLanguage, string $systemPrompt): array
+    {
+        return $this->anthropicClient->translateBatch($texts, $targetLanguage, $systemPrompt);
+    }
+
     // ========================================
     // HELPER METHODS
     // ========================================
