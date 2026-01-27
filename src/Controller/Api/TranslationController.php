@@ -626,8 +626,8 @@ class TranslationController extends AbstractController
             // Get system prompt for target language
             $systemPrompt = $this->getSystemPromptForLanguage($targetLanguage, $context);
 
-            // Translate in chunks (reuse existing logic from TranslationService)
-            $chunks = array_chunk($sourceSnippets, 10, true);
+            // Translate in smaller chunks (5 instead of 10) to avoid timeouts
+            $chunks = array_chunk($sourceSnippets, 5, true);
             $translatedSnippets = [];
             $errors = [];
 
@@ -636,10 +636,25 @@ class TranslationController extends AbstractController
                     // Use AnthropicClient through TranslationService
                     $chunkResult = $this->translationService->translateBatch($chunk, $targetLanguage, $systemPrompt);
                     $translatedSnippets = array_merge($translatedSnippets, $chunkResult);
+
+                    // Small delay between chunks to avoid rate limiting
+                    if ($chunkIndex < count($chunks) - 1) {
+                        usleep(300000); // 0.3 seconds
+                    }
                 } catch (\Exception $e) {
-                    // Log and continue
-                    foreach (array_keys($chunk) as $key) {
-                        $errors[$key] = $e->getMessage();
+                    // Try individual translation for failed chunk
+                    foreach ($chunk as $key => $value) {
+                        try {
+                            // Use single translation as fallback
+                            $singleResult = $this->translationService->translateBatch(
+                                [$key => $value],
+                                $targetLanguage,
+                                $systemPrompt
+                            );
+                            $translatedSnippets = array_merge($translatedSnippets, $singleResult);
+                        } catch (\Exception $singleE) {
+                            $errors[$key] = $singleE->getMessage();
+                        }
                     }
                 }
             }

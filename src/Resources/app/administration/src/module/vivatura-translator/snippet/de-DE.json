@@ -49,6 +49,8 @@
             "language": "Sprache",
             "translate": "Übersetzen",
             "translateAllFiles": "Alle Dateien übersetzen",
+            "translatingFiles": "Dateien werden übersetzt...",
+            "completed": "abgeschlossen",
             "noSnippetFilesFound": "Keine Snippet-Dateien für diese Sprache gefunden"
         },
         "button": {

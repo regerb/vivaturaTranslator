@@ -197,67 +197,136 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         async translateSnippetFile(file) {
-            if (!confirm(`Translate ${file.filename} from ${file.language} to ${this.snippetFilesTargetLang}?`)) {
+            console.log('[SnippetFileTranslation] Starting translation for:', file.filename);
+
+            if (!confirm(`Translate ${file.filename} (${file.snippetCount} snippets) from ${file.language} to ${this.snippetFilesTargetLang}?`)) {
                 return;
             }
 
             this.isTranslating = true;
+            const startTime = Date.now();
 
             try {
+                console.log('[SnippetFileTranslation] Sending request...', {
+                    sourceFilePath: file.fullPath,
+                    targetLanguage: this.snippetFilesTargetLang,
+                    snippetCount: file.snippetCount
+                });
+
                 const response = await this.httpClient.post('/_action/vivatura-translator/translate-snippet-file', {
                     sourceFilePath: file.fullPath,
                     targetLanguage: this.snippetFilesTargetLang
-                }, { headers: this.authHeaders });
+                }, {
+                    headers: this.authHeaders,
+                    timeout: 300000 // 5 minutes timeout
+                });
+
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                console.log(`[SnippetFileTranslation] Completed in ${duration}s`, response.data);
 
                 this.isTranslating = false;
 
                 if (response.data.success) {
                     this.createNotificationSuccess({
                         title: this.$tc('vivatura-translator.notification.successTitle'),
-                        message: `Translated ${response.data.translated}/${response.data.total} snippets to ${response.data.targetFile}`
+                        message: `✓ ${file.filename}: ${response.data.translated}/${response.data.total} snippets translated (${duration}s)`
                     });
                 }
             } catch (error) {
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                console.error(`[SnippetFileTranslation] Failed after ${duration}s:`, error);
+
                 this.isTranslating = false;
                 this.createNotificationError({
                     title: this.$tc('vivatura-translator.notification.errorTitle'),
-                    message: error.response?.data?.error || error.message
+                    message: `✗ ${file.filename}: ${error.response?.data?.error || error.message}`
                 });
             }
         },
 
         async translateAllSnippetFiles() {
-            const totalFiles = this.filteredSnippetFiles.reduce((sum, source) => sum + source.files.length, 0);
+            const allFiles = this.filteredSnippetFiles.reduce((acc, source) => {
+                return acc.concat(source.files.map(f => ({ ...f, source: source.name })));
+            }, []);
+            const totalFiles = allFiles.length;
 
-            if (!confirm(`Translate all ${totalFiles} snippet files from ${this.snippetFilesSourceLang} to ${this.snippetFilesTargetLang}?`)) {
+            console.log('[SnippetFileTranslation] Starting batch translation:', {
+                totalFiles,
+                sourceLanguage: this.snippetFilesSourceLang,
+                targetLanguage: this.snippetFilesTargetLang
+            });
+
+            if (!confirm(`Translate all ${totalFiles} snippet files from ${this.snippetFilesSourceLang} to ${this.snippetFilesTargetLang}?\n\nThis may take several minutes.`)) {
                 return;
             }
 
             this.isTranslating = true;
+            this.translationProgress = 0;
+
             let translated = 0;
             let failed = 0;
+            const startTime = Date.now();
 
-            for (const source of this.filteredSnippetFiles) {
-                for (const file of source.files) {
-                    try {
-                        await this.httpClient.post('/_action/vivatura-translator/translate-snippet-file', {
-                            sourceFilePath: file.fullPath,
-                            targetLanguage: this.snippetFilesTargetLang
-                        }, { headers: this.authHeaders });
+            for (let i = 0; i < allFiles.length; i++) {
+                const file = allFiles[i];
+                const progress = Math.round(((i + 1) / totalFiles) * 100);
+
+                console.log(`[SnippetFileTranslation] Progress: ${i + 1}/${totalFiles} (${progress}%) - ${file.filename}`);
+
+                this.translationProgress = progress;
+
+                try {
+                    const fileStartTime = Date.now();
+
+                    const response = await this.httpClient.post('/_action/vivatura-translator/translate-snippet-file', {
+                        sourceFilePath: file.fullPath,
+                        targetLanguage: this.snippetFilesTargetLang
+                    }, {
+                        headers: this.authHeaders,
+                        timeout: 300000 // 5 minutes per file
+                    });
+
+                    const fileDuration = ((Date.now() - fileStartTime) / 1000).toFixed(1);
+
+                    if (response.data.success) {
                         translated++;
-                    } catch (error) {
-                        console.error(`Failed to translate ${file.filename}:`, error);
-                        failed++;
+                        console.log(`[SnippetFileTranslation] ✓ ${file.filename} (${fileDuration}s):`, response.data);
                     }
+
+                    // Small delay between files to avoid overwhelming the server
+                    if (i < allFiles.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                } catch (error) {
+                    failed++;
+                    console.error(`[SnippetFileTranslation] ✗ ${file.filename}:`, error);
+
+                    // Don't stop on error, continue with next file
                 }
             }
 
-            this.isTranslating = false;
-
-            this.createNotificationSuccess({
-                title: this.$tc('vivatura-translator.notification.successTitle'),
-                message: `Translated ${translated} files successfully (${failed} failed)`
+            const totalDuration = ((Date.now() - startTime) / 1000).toFixed(1);
+            console.log('[SnippetFileTranslation] Batch translation completed:', {
+                totalFiles,
+                translated,
+                failed,
+                duration: totalDuration + 's'
             });
+
+            this.isTranslating = false;
+            this.translationProgress = 100;
+
+            if (failed === 0) {
+                this.createNotificationSuccess({
+                    title: this.$tc('vivatura-translator.notification.successTitle'),
+                    message: `✓ Successfully translated all ${translated} files in ${totalDuration}s`
+                });
+            } else {
+                this.createNotificationWarning({
+                    title: this.$tc('vivatura-translator.notification.warningTitle'),
+                    message: `⚠ Translated ${translated} files, ${failed} failed (${totalDuration}s)`
+                });
+            }
         },
 
         async loadStatus() {
