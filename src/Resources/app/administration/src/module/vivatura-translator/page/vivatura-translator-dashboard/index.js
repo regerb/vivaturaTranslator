@@ -60,14 +60,14 @@ Component.register('vivatura-translator-dashboard', {
             snippetTotal: 0,
 
             // Bulk snippet translation
-            bulkSourceIso: 'de-DE',
-            bulkTargetIso: 'fr-FR',
+            bulkSourceIso: null,
+            bulkTargetIso: null,
 
             // Snippet files
             snippetFiles: [],
             filteredSnippetFiles: [],
-            snippetFilesSourceLang: 'de-DE',
-            snippetFilesTargetLang: 'fr-FR',
+            snippetFilesSourceLang: null,
+            snippetFilesTargetLang: null,
 
             // Translation
             isTranslating: false,
@@ -75,6 +75,7 @@ Component.register('vivatura-translator-dashboard', {
             translationResults: null,
             activeJobIds: [],
             pollingInterval: null,
+            overwriteExisting: false,
 
             // Settings
             languagePrompts: {}
@@ -227,7 +228,8 @@ Component.register('vivatura-translator-dashboard', {
                 const response = await this.httpClient.post('/_action/vivatura-translator/translate-snippet-file', {
                     sourceFilePath: file.fullPath,
                     targetLanguage: this.snippetFilesTargetLang,
-                    batchSize: batchSize || null
+                    batchSize: batchSize || null,
+                    overwriteExisting: this.overwriteExisting
                 }, {
                     headers: this.authHeaders,
                     timeout: 300000 // 5 minutes timeout
@@ -400,7 +402,8 @@ Component.register('vivatura-translator-dashboard', {
 
                     const response = await this.httpClient.post('/_action/vivatura-translator/translate-snippet-file', {
                         sourceFilePath: file.fullPath,
-                        targetLanguage: this.snippetFilesTargetLang
+                        targetLanguage: this.snippetFilesTargetLang,
+                        overwriteExisting: this.overwriteExisting
                     }, {
                         headers: this.authHeaders,
                         timeout: 300000 // 5 minutes per file
@@ -457,6 +460,31 @@ Component.register('vivatura-translator-dashboard', {
         async loadLanguages() {
             const response = await this.httpClient.get('/_action/vivatura-translator/languages', { headers: this.authHeaders });
             this.availableLanguages = response.data.languages || [];
+
+            // Set default values based on available languages
+            if (this.availableLanguages.length > 0) {
+                // Try to find German as default source, otherwise use first language
+                const germanLang = this.availableLanguages.find(l => l.locale === 'de-DE');
+                const defaultSource = germanLang ? germanLang.locale : this.availableLanguages[0].locale;
+
+                // Try to find a different language as default target
+                const otherLang = this.availableLanguages.find(l => l.locale !== defaultSource);
+                const defaultTarget = otherLang ? otherLang.locale : defaultSource;
+
+                // Set defaults if not already set
+                if (!this.bulkSourceIso) {
+                    this.bulkSourceIso = defaultSource;
+                }
+                if (!this.bulkTargetIso) {
+                    this.bulkTargetIso = defaultTarget;
+                }
+                if (!this.snippetFilesSourceLang) {
+                    this.snippetFilesSourceLang = defaultSource;
+                }
+                if (!this.snippetFilesTargetLang) {
+                    this.snippetFilesTargetLang = defaultTarget;
+                }
+            }
         },
 
         // ========================================
@@ -525,7 +553,8 @@ Component.register('vivatura-translator-dashboard', {
             try {
                 const response = await this.httpClient.post('/_action/vivatura-translator/translate-products', {
                     productIds: this.selectedProducts,
-                    targetLanguageIds: this.selectedLanguages
+                    targetLanguageIds: this.selectedLanguages,
+                    overwriteExisting: this.overwriteExisting
                 }, { headers: this.authHeaders });
 
                 if (response.data.async) {
@@ -619,7 +648,8 @@ Component.register('vivatura-translator-dashboard', {
             try {
                 const response = await this.httpClient.post('/_action/vivatura-translator/translate-cms-pages', {
                     pageIds: this.selectedCmsPages,
-                    targetLanguageIds: this.selectedLanguages
+                    targetLanguageIds: this.selectedLanguages,
+                    overwriteExisting: this.overwriteExisting
                 }, { headers: this.authHeaders });
 
                 if (response.data.async) {
@@ -736,7 +766,8 @@ Component.register('vivatura-translator-dashboard', {
             try {
                 const payload = {
                     sourceSetId: this.sourceSnippetSet,
-                    targetSetId: this.targetSnippetSet
+                    targetSetId: this.targetSnippetSet,
+                    overwriteExisting: this.overwriteExisting
                 };
 
                 // If specific snippets selected, include them
@@ -780,7 +811,8 @@ Component.register('vivatura-translator-dashboard', {
             try {
                 const response = await this.httpClient.post('/_action/vivatura-translator/translate-all-snippet-sets', {
                     sourceIso: this.bulkSourceIso,
-                    targetIso: this.bulkTargetIso
+                    targetIso: this.bulkTargetIso,
+                    overwriteExisting: this.overwriteExisting
                 }, { headers: this.authHeaders });
 
                 if (response.data.async) {

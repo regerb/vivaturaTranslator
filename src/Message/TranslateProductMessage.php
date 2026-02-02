@@ -9,7 +9,8 @@ class TranslateProductMessage implements AsyncMessageInterface
     public function __construct(
         private readonly string $jobId,
         private readonly string $productId,
-        private readonly array $targetLanguageIds
+        private readonly array $targetLanguageIds,
+        private readonly bool $overwriteExisting = false
     ) {
     }
 
@@ -26,5 +27,10 @@ class TranslateProductMessage implements AsyncMessageInterface
     public function getTargetLanguageIds(): array
     {
         return $this->targetLanguageIds;
+    }
+
+    public function getOverwriteExisting(): bool
+    {
+        return $this->overwriteExisting;
     }
 }

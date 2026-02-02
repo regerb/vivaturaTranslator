@@ -128,10 +128,69 @@
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 16px;
-        padding-top: 10px;
+        padding: 16px 0;
+        position: relative;
+        z-index: 1;
 
         .sw-pagination {
             margin-bottom: 0;
+            position: relative;
+            z-index: 10;
+
+            .sw-pagination__controls {
+                pointer-events: auto;
+            }
+
+            button, .sw-field {
+                pointer-events: auto;
+                cursor: pointer;
+            }
+        }
+    }
+
+    // Fix for card footer positioning
+    .sw-card__content {
+        overflow: visible;
+    }
+
+    .sw-card__footer {
+        position: relative;
+        z-index: 5;
+        background: #fff;
+        border-top: 1px solid #e5e7eb;
+        padding: 12px 24px;
+    }
+
+    // Translation options styling
+    .translation-options {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        padding: 12px 16px;
+        background: #f9fafb;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        border: 1px solid #e5e7eb;
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            .sw-field--checkbox {
+                margin: 0;
+            }
+
+            label {
+                cursor: pointer;
+                user-select: none;
+            }
+        }
+
+        .option-hint {
+            font-size: 12px;
+            color: #6b7280;
+            font-style: italic;
         }
     }
 

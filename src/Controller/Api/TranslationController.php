@@ -109,6 +109,7 @@ class TranslationController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
         $targetLanguageIds = $data['targetLanguageIds'] ?? [];
+        $overwriteExisting = $data['overwriteExisting'] ?? false;
 
         if (empty($targetLanguageIds)) {
             return new JsonResponse(['error' => 'No target languages specified'], 400);
@@ -116,7 +117,7 @@ class TranslationController extends AbstractController
 
         try {
             $jobId = $this->createTranslationJob('product', $productId, $targetLanguageIds, $context);
-            $this->messageBus->dispatch(new TranslateProductMessage($jobId, $productId, $targetLanguageIds));
+            $this->messageBus->dispatch(new TranslateProductMessage($jobId, $productId, $targetLanguageIds, $overwriteExisting));
 
             return new JsonResponse([
                 'success' => true,
@@ -140,6 +141,7 @@ class TranslationController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $productIds = $data['productIds'] ?? [];
         $targetLanguageIds = $data['targetLanguageIds'] ?? [];
+        $overwriteExisting = $data['overwriteExisting'] ?? false;
 
         if (empty($productIds)) {
             return new JsonResponse(['error' => 'No products specified'], 400);
@@ -153,7 +155,7 @@ class TranslationController extends AbstractController
         foreach ($productIds as $productId) {
             try {
                 $jobId = $this->createTranslationJob('product', $productId, $targetLanguageIds, $context);
-                $this->messageBus->dispatch(new TranslateProductMessage($jobId, $productId, $targetLanguageIds));
+                $this->messageBus->dispatch(new TranslateProductMessage($jobId, $productId, $targetLanguageIds, $overwriteExisting));
                 $jobIds[$productId] = $jobId;
             } catch (\Exception $e) {
                 $jobIds[$productId] = ['error' => $e->getMessage()];
@@ -242,6 +244,7 @@ class TranslationController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
         $targetLanguageIds = $data['targetLanguageIds'] ?? [];
+        $overwriteExisting = $data['overwriteExisting'] ?? false;
 
         if (empty($targetLanguageIds)) {
             return new JsonResponse(['error' => 'No target languages specified'], 400);
@@ -249,7 +252,7 @@ class TranslationController extends AbstractController
 
         try {
             $jobId = $this->createTranslationJob('cms_page', $pageId, $targetLanguageIds, $context);
-            $this->messageBus->dispatch(new TranslateCmsPageMessage($jobId, $pageId, $targetLanguageIds));
+            $this->messageBus->dispatch(new TranslateCmsPageMessage($jobId, $pageId, $targetLanguageIds, $overwriteExisting));
 
             return new JsonResponse([
                 'success' => true,
@@ -273,6 +276,7 @@ class TranslationController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $pageIds = $data['pageIds'] ?? [];
         $targetLanguageIds = $data['targetLanguageIds'] ?? [];
+        $overwriteExisting = $data['overwriteExisting'] ?? false;
 
         if (empty($pageIds)) {
             return new JsonResponse(['error' => 'No CMS pages specified'], 400);
@@ -286,7 +290,7 @@ class TranslationController extends AbstractController
         foreach ($pageIds as $pageId) {
             try {
                 $jobId = $this->createTranslationJob('cms_page', $pageId, $targetLanguageIds, $context);
-                $this->messageBus->dispatch(new TranslateCmsPageMessage($jobId, $pageId, $targetLanguageIds));
+                $this->messageBus->dispatch(new TranslateCmsPageMessage($jobId, $pageId, $targetLanguageIds, $overwriteExisting));
                 $jobIds[$pageId] = $jobId;
             } catch (\Exception $e) {
                 $jobIds[$pageId] = ['error' => $e->getMessage()];
@@ -397,6 +401,7 @@ class TranslationController extends AbstractController
         $sourceSetId = $data['sourceSetId'] ?? null;
         $targetSetId = $data['targetSetId'] ?? null;
         $snippetIds = $data['snippetIds'] ?? null;
+        $overwriteExisting = $data['overwriteExisting'] ?? false;
 
         if (empty($sourceSetId) || empty($targetSetId)) {
             return new JsonResponse(['error' => 'Source and target snippet sets are required'], 400);
@@ -405,7 +410,7 @@ class TranslationController extends AbstractController
         try {
             $entityId = $sourceSetId . ':' . $targetSetId;
             $jobId = $this->createTranslationJob('snippet_set', $entityId, [], $context);
-            $this->messageBus->dispatch(new TranslateSnippetSetMessage($jobId, $sourceSetId, $targetSetId, $snippetIds));
+            $this->messageBus->dispatch(new TranslateSnippetSetMessage($jobId, $sourceSetId, $targetSetId, $snippetIds, $overwriteExisting));
 
             return new JsonResponse([
                 'success' => true,
@@ -429,6 +434,7 @@ class TranslationController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $sourceIso = $data['sourceIso'] ?? null;
         $targetIso = $data['targetIso'] ?? null;
+        $overwriteExisting = $data['overwriteExisting'] ?? false;
 
         if (empty($sourceIso) || empty($targetIso)) {
             return new JsonResponse(['error' => 'Source and target ISO codes are required'], 400);
@@ -485,7 +491,8 @@ class TranslationController extends AbstractController
                         $jobId,
                         $sourceSet->getId(),
                         $targetSet->getId(),
-                        null
+                        null,
+                        $overwriteExisting
                     ));
 
                     $jobIds[$sourceName . ' → ' . $targetSet->getName()] = $jobId;

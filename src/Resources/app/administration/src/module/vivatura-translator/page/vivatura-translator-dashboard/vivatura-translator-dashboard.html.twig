@@ -64,6 +64,26 @@
             </sw-card>
             {% endblock %}
 
+            {# Translation Options #}
+            {% block vivatura_translator_options %}
+            <sw-card :title="$tc('vivatura-translator.dashboard.translationOptions')" v-if="activeTab !== 'settings'">
+                <div class="translation-options">
+                    <div class="option-item">
+                        <sw-checkbox-field
+                            v-model="overwriteExisting"
+                            :label="$tc('vivatura-translator.dashboard.overwriteExisting')"
+                        />
+                    </div>
+                    <span class="option-hint">
+                        {{ overwriteExisting
+                            ? $tc('vivatura-translator.dashboard.overwriteHintOn')
+                            : $tc('vivatura-translator.dashboard.overwriteHintOff')
+                        }}
+                    </span>
+                </div>
+            </sw-card>
+            {% endblock %}
+
             {# Tabs #}
             {% block vivatura_translator_tabs %}
             <sw-tabs :small="false" :default-item="activeTab" @new-item-active="onTabChange">
@@ -252,20 +272,26 @@
                                 v-model="bulkSourceIso"
                                 :label="$tc('vivatura-translator.dashboard.bulkSourceLanguage')"
                             >
-                                <option value="de-DE">Deutsch (de-DE)</option>
-                                <option value="en-GB">English (en-GB)</option>
+                                <option
+                                    v-for="language in availableLanguages"
+                                    :key="language.id"
+                                    :value="language.locale"
+                                >
+                                    {{ language.name }} ({{ language.locale }})
+                                </option>
                             </sw-select-field>
 
                             <sw-select-field
                                 v-model="bulkTargetIso"
                                 :label="$tc('vivatura-translator.dashboard.bulkTargetLanguage')"
                             >
-                                <option value="en-GB">English (en-GB)</option>
-                                <option value="fr-FR">Français (fr-FR)</option>
-                                <option value="es-ES">Español (es-ES)</option>
-                                <option value="it-IT">Italiano (it-IT)</option>
-                                <option value="nl-NL">Nederlands (nl-NL)</option>
-                                <option value="pl-PL">Polski (pl-PL)</option>
+                                <option
+                                    v-for="language in availableLanguages"
+                                    :key="language.id"
+                                    :value="language.locale"
+                                >
+                                    {{ language.name }} ({{ language.locale }})
+                                </option>
                             </sw-select-field>
 
                             <sw-button
@@ -289,20 +315,26 @@
                                 v-model="snippetFilesSourceLang"
                                 :label="$tc('vivatura-translator.dashboard.bulkSourceLanguage')"
                             >
-                                <option value="de-DE">Deutsch (de-DE)</option>
-                                <option value="en-GB">English (en-GB)</option>
+                                <option
+                                    v-for="language in availableLanguages"
+                                    :key="language.id"
+                                    :value="language.locale"
+                                >
+                                    {{ language.name }} ({{ language.locale }})
+                                </option>
                             </sw-select-field>
 
                             <sw-select-field
                                 v-model="snippetFilesTargetLang"
                                 :label="$tc('vivatura-translator.dashboard.bulkTargetLanguage')"
                             >
-                                <option value="en-GB">English (en-GB)</option>
-                                <option value="fr-FR">Français (fr-FR)</option>
-                                <option value="es-ES">Español (es-ES)</option>
-                                <option value="it-IT">Italiano (it-IT)</option>
-                                <option value="nl-NL">Nederlands (nl-NL)</option>
-                                <option value="pl-PL">Polski (pl-PL)</option>
+                                <option
+                                    v-for="language in availableLanguages"
+                                    :key="language.id"
+                                    :value="language.locale"
+                                >
+                                    {{ language.name }} ({{ language.locale }})
+                                </option>
                             </sw-select-field>
 
                             <sw-button

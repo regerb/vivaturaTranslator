@@ -32,11 +32,12 @@ class TranslationService
     // PRODUCT TRANSLATION
     // ========================================
 
-    public function translateProduct(string $productId, array $targetLanguageIds, Context $context): array
+    public function translateProduct(string $productId, array $targetLanguageIds, Context $context, bool $overwriteExisting = false): array
     {
         $this->logger->info('TranslationService: Starting product translation', [
             'productId' => $productId,
             'targetLanguageIds' => $targetLanguageIds,
+            'overwriteExisting' => $overwriteExisting,
         ]);
 
         // Create context with source language to get the source texts
@@ -90,6 +91,19 @@ class TranslationService
             $languageCode = $language->getLocale()?->getCode() ?? 'en-GB';
             $systemPrompt = $this->getSystemPromptForLanguage($languageId, $context);
 
+            // Check if translation already exists and skip if not overwriting
+            if (!$overwriteExisting) {
+                $hasTranslation = $this->productHasTranslation($productId, $languageId, $context);
+                if ($hasTranslation) {
+                    $this->logger->info('TranslationService: Skipping existing translation', [
+                        'productId' => $productId,
+                        'targetLanguageId' => $languageId,
+                    ]);
+                    $results[$languageCode] = ['success' => true, 'skipped' => true, 'message' => 'Translation already exists'];
+                    continue;
+                }
+            }
+
             $this->logger->info('TranslationService: Translating to language', [
                 'productId' => $productId,
                 'targetLanguageId' => $languageId,
@@ -132,7 +146,7 @@ class TranslationService
     // CMS PAGE TRANSLATION (WITH SLOTS)
     // ========================================
 
-    public function translateCmsPage(string $pageId, array $targetLanguageIds, Context $context): array
+    public function translateCmsPage(string $pageId, array $targetLanguageIds, Context $context, bool $overwriteExisting = false): array
     {
         // Create context with source language to get the source texts
         $sourceLanguageId = $this->getSourceLanguageId($context);
@@ -165,6 +179,15 @@ class TranslationService
             $language = $this->getLanguage($languageId, $context);
             $languageCode = $language->getLocale()?->getCode() ?? 'en-GB';
             $systemPrompt = $this->getSystemPromptForLanguage($languageId, $context);
+
+            // Check if translation already exists and skip if not overwriting
+            if (!$overwriteExisting) {
+                $hasTranslation = $this->cmsPageHasTranslation($pageId, $languageId, $context);
+                if ($hasTranslation) {
+                    $results[$languageCode] = ['success' => true, 'skipped' => true, 'message' => 'Translation already exists'];
+                    continue;
+                }
+            }
 
             try {
                 $translated = $this->anthropicClient->translateBatch($content, $languageCode, $systemPrompt);
@@ -277,7 +300,7 @@ class TranslationService
     // SNIPPET TRANSLATION
     // ========================================
 
-    public function translateSnippetSet(string $sourceSetId, string $targetSetId, ?array $snippetIds, Context $context): array
+    public function translateSnippetSet(string $sourceSetId, string $targetSetId, ?array $snippetIds, Context $context, bool $overwriteExisting = false): array
     {
         // Get target set info for language detection
         $targetSet = $this->snippetSetRepository->search(new Criteria([$targetSetId]), $context)->first();
@@ -305,21 +328,46 @@ class TranslationService
             return ['success' => true, 'message' => 'No snippets found in source set'];
         }
 
+        // Get existing snippets in target set to check for duplicates
+        $existingSnippetKeys = [];
+        if (!$overwriteExisting) {
+            $existingCriteria = new Criteria();
+            $existingCriteria->addFilter(new EqualsFilter('setId', $targetSetId));
+            $existingSnippets = $this->snippetRepository->search($existingCriteria, $context)->getEntities();
+            foreach ($existingSnippets as $snippet) {
+                $existingSnippetKeys[$snippet->getTranslationKey()] = true;
+            }
+        }
+
         // Batch translate all snippets in chunks
         $textsToTranslate = [];
         $snippetKeyMap = [];
+        $skippedCount = 0;
 
         foreach ($sourceSnippets as $snippet) {
             $value = $snippet->getValue();
             if (!empty($value)) {
                 $key = $snippet->getTranslationKey();
+
+                // Skip if translation already exists and we're not overwriting
+                if (!$overwriteExisting && isset($existingSnippetKeys[$key])) {
+                    $skippedCount++;
+                    continue;
+                }
+
                 $textsToTranslate[$key] = $value;
                 $snippetKeyMap[$key] = $snippet;
             }
         }
 
         if (empty($textsToTranslate)) {
-            return ['success' => true, 'message' => 'No translatable content found'];
+            return [
+                'success' => true,
+                'message' => $skippedCount > 0
+                    ? "All snippets already translated ($skippedCount skipped)"
+                    : 'No translatable content found',
+                'skipped' => $skippedCount
+            ];
         }
 
         // Reduce chunk size to avoid API errors - smaller chunks are more reliable
@@ -524,7 +572,8 @@ class TranslationService
             'success' => true,
             'translated' => $successCount,
             'errors' => $errorCount,
-            'total' => count($textsToTranslate),
+            'skipped' => $skippedCount,
+            'total' => count($textsToTranslate) + $skippedCount,
             'details' => $results,
         ];
     }
@@ -743,5 +792,56 @@ class TranslationService
         }
 
         return $payload;
+    }
+
+    private function productHasTranslation(string $productId, string $languageId, Context $context): bool
+    {
+        $criteria = new Criteria([$productId]);
+        $criteria->addAssociation('translations');
+
+        $product = $this->productRepository->search($criteria, $context)->first();
+        if (!$product) {
+            return false;
+        }
+
+        $translations = $product->getTranslations();
+        if (!$translations) {
+            return false;
+        }
+
+        foreach ($translations as $translation) {
+            if ($translation->getLanguageId() === $languageId) {
+                // Check if there's actual translated content (not just empty)
+                $name = $translation->getName();
+                return !empty($name);
+            }
+        }
+
+        return false;
+    }
+
+    private function cmsPageHasTranslation(string $pageId, string $languageId, Context $context): bool
+    {
+        $criteria = new Criteria([$pageId]);
+        $criteria->addAssociation('translations');
+
+        $page = $this->cmsPageRepository->search($criteria, $context)->first();
+        if (!$page) {
+            return false;
+        }
+
+        $translations = $page->getTranslations();
+        if (!$translations) {
+            return false;
+        }
+
+        foreach ($translations as $translation) {
+            if ($translation->getLanguageId() === $languageId) {
+                $name = $translation->getName();
+                return !empty($name);
+            }
+        }
+
+        return false;
     }
 }

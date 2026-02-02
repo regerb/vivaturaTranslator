@@ -55,7 +55,8 @@ class TranslationMessageHandler
         return $this->translationService->translateProduct(
             $message->getProductId(),
             $message->getTargetLanguageIds(),
-            $context
+            $context,
+            $message->getOverwriteExisting()
         );
     }
 
@@ -64,7 +65,8 @@ class TranslationMessageHandler
         return $this->translationService->translateCmsPage(
             $message->getPageId(),
             $message->getTargetLanguageIds(),
-            $context
+            $context,
+            $message->getOverwriteExisting()
         );
     }
 
@@ -74,7 +76,8 @@ class TranslationMessageHandler
             $message->getSourceSetId(),
             $message->getTargetSetId(),
             $message->getSnippetIds(),
-            $context
+            $context,
+            $message->getOverwriteExisting()
         );
     }
 

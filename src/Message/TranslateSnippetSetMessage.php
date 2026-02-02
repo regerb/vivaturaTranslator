@@ -10,7 +10,8 @@ class TranslateSnippetSetMessage implements AsyncMessageInterface
         private readonly string $jobId,
         private readonly string $sourceSetId,
         private readonly string $targetSetId,
-        private readonly ?array $snippetIds = null
+        private readonly ?array $snippetIds = null,
+        private readonly bool $overwriteExisting = false
     ) {
     }
 
@@ -32,5 +33,10 @@ class TranslateSnippetSetMessage implements AsyncMessageInterface
     public function getSnippetIds(): ?array
     {
         return $this->snippetIds;
+    }
+
+    public function getOverwriteExisting(): bool
+    {
+        return $this->overwriteExisting;
     }
 }

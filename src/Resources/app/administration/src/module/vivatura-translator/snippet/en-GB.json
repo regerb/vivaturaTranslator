@@ -51,7 +51,11 @@
             "translateAllFiles": "Translate all files",
             "translatingFiles": "Translating files...",
             "completed": "completed",
-            "noSnippetFilesFound": "No snippet files found for this language"
+            "noSnippetFilesFound": "No snippet files found for this language",
+            "translationOptions": "Translation Options",
+            "overwriteExisting": "Overwrite existing translations",
+            "overwriteHintOn": "All translations will be recreated, even if a translation already exists.",
+            "overwriteHintOff": "Only missing translations will be created. Existing ones remain unchanged."
         },
         "button": {
             "translate": "Translate with AI"
