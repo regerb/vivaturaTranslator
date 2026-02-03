@@ -663,6 +663,10 @@ class TranslationController extends AbstractController
                 try {
                     // Use AnthropicClient through TranslationService
                     $chunkResult = $this->translationService->translateBatch($chunk, $targetLanguage, $systemPrompt);
+
+                    // Ensure result is flat (in case AI returned nested JSON)
+                    $chunkResult = $this->snippetFileScanner->flattenArray($chunkResult);
+
                     $translatedSnippets = array_merge($translatedSnippets, $chunkResult);
 
                     // Small delay between chunks to avoid rate limiting
@@ -679,6 +683,10 @@ class TranslationController extends AbstractController
                                 $targetLanguage,
                                 $systemPrompt
                             );
+
+                            // Ensure result is flat
+                            $singleResult = $this->snippetFileScanner->flattenArray($singleResult);
+
                             $translatedSnippets = array_merge($translatedSnippets, $singleResult);
                         } catch (\Exception $singleE) {
                             $errors[$key] = $singleE->getMessage();
@@ -697,17 +705,22 @@ class TranslationController extends AbstractController
 
                 foreach ($sourceSnippets as $key => $sourceValue) {
                     if (isset($translatedSnippets[$key])) {
-                        // Successfully translated
+                        // Successfully translated - USE THIS
                         $finalSnippets[$key] = $translatedSnippets[$key];
                     } elseif (isset($existingSnippets[$key])) {
                         // Translation failed (or not returned), but we have an existing value -> Keep it
+                        // This prevents empty holes in the file
                         $finalSnippets[$key] = $existingSnippets[$key];
-                        // If it wasn't in errors list, maybe we should treat it as error?
-                        // But translatedSnippets should contain all successful ones.
+                    } else {
+                        // New key that failed to translate - we can't do much but skip or insert original?
+                        // Let's insert the translated one if it exists in the raw return even if not in mapped?
+                        // No, just skip.
                     }
-                    // If neither, it's missing (failed and no backup) - sadly unavoidable if we want to sync.
                 }
-                // Note: Keys present in $existingSnippets but NOT in $sourceSnippets are effectively deleted (Clean up)
+
+                // If we are overwriting, we also want to preserve keys that are in TARGET but NOT in SOURCE?
+                // Usually NO - we want to match Source structure (clean up).
+                // So the loop above over $sourceSnippets is correct for syncing structure.
             }
             elseif (!$overwriteExisting && file_exists($targetFilePath)) {
                 // Merge mode: Keep everything from existing, add/update new translations
@@ -873,6 +886,10 @@ class TranslationController extends AbstractController
             foreach ($chunks as $chunk) {
                 try {
                     $result = $this->translationService->translateBatch($chunk, $targetLanguage, $systemPrompt);
+
+                    // Ensure result is flat
+                    $result = $this->snippetFileScanner->flattenArray($result);
+
                     $translated = array_merge($translated, $result);
                 } catch (\Exception $e) {
                     $errors += count($chunk);

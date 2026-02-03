@@ -423,6 +423,10 @@ class TranslationService
                 @file_put_contents(__DIR__ . '/../../vivatura_translation_debug.log', $debugLog, FILE_APPEND);
 
                 $chunkResult = $this->anthropicClient->translateBatch($chunk, $targetIso, $systemPrompt);
+
+                // Ensure result is flat (handle nested JSON response)
+                $chunkResult = $this->flattenArray($chunkResult);
+
                 $translatedTexts = array_merge($translatedTexts, $chunkResult);
 
                 $this->logger->info('TranslationService: Chunk translated successfully', [
@@ -839,5 +843,26 @@ class TranslationService
         }
 
         return false;
+    }
+
+    /**
+     * Flatten nested array to dot notation
+     * Copied from SnippetFileScanner to avoid circular dependency
+     */
+    private function flattenArray(array $array, string $prefix = ''): array
+    {
+        $result = [];
+
+        foreach ($array as $key => $value) {
+            $newKey = $prefix === '' ? $key : $prefix . '.' . $key;
+
+            if (is_array($value)) {
+                $result = array_merge($result, $this->flattenArray($value, $newKey));
+            } else {
+                $result[$newKey] = (string) $value;
+            }
+        }
+
+        return $result;
     }
 }

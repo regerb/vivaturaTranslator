@@ -178,7 +178,7 @@ class SnippetFileScanner
     /**
      * Flatten nested array to dot notation
      */
-    private function flattenArray(array $array, string $prefix = ''): array
+    public function flattenArray(array $array, string $prefix = ''): array
     {
         $result = [];
 
