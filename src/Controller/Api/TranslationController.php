@@ -733,9 +733,27 @@ class TranslationController extends AbstractController
 
     private function generateTargetFilePath(string $sourceFilePath, string $targetLanguage): string
     {
-        // Replace language code in filename
-        // Example: storefront.de-DE.json -> storefront.fr-FR.json
-        return preg_replace('/\.([a-z]{2}-[A-Z]{2})\.json$/', '.' . $targetLanguage . '.json', $sourceFilePath);
+        $path = $sourceFilePath;
+        $sourceLang = null;
+
+        // 1. Extract source language from filename
+        if (preg_match('/\.([a-z]{2}-[A-Z]{2})\.json$/', $sourceFilePath, $matches)) {
+            $sourceLang = $matches[1];
+            // Replace in filename: storefront.de-DE.json -> storefront.pl-PL.json
+            $path = str_replace('.' . $sourceLang . '.json', '.' . $targetLanguage . '.json', $path);
+        }
+
+        // 2. If source language was found, try to replace it in the directory path as well
+        // Many plugins use structure: Resources/snippet/de-DE/snippet.de-DE.json
+        if ($sourceLang) {
+            $search = DIRECTORY_SEPARATOR . $sourceLang . DIRECTORY_SEPARATOR;
+            if (str_contains($path, $search)) {
+                $replace = DIRECTORY_SEPARATOR . $targetLanguage . DIRECTORY_SEPARATOR;
+                $path = str_replace($search, $replace, $path);
+            }
+        }
+
+        return $path;
     }
 
     #[Route(
