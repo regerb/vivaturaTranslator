@@ -268,31 +268,21 @@
                         <p>{{ $tc('vivatura-translator.dashboard.bulkTranslateHint') }}</p>
 
                         <sw-container columns="1fr 1fr auto" gap="16px" style="margin-top: 12px;">
-                            <sw-select-field
-                                v-model="bulkSourceIso"
+                            <sw-single-select
+                                v-model:value="bulkSourceIso"
                                 :label="$tc('vivatura-translator.dashboard.bulkSourceLanguage')"
-                            >
-                                <option
-                                    v-for="language in availableLanguages"
-                                    :key="language.id"
-                                    :value="language.locale"
-                                >
-                                    {{ language.name }} ({{ language.locale }})
-                                </option>
-                            </sw-select-field>
+                                :options="languageOptions"
+                                labelProperty="label"
+                                valueProperty="value"
+                            />
 
-                            <sw-select-field
-                                v-model="bulkTargetIso"
+                            <sw-single-select
+                                v-model:value="bulkTargetIso"
                                 :label="$tc('vivatura-translator.dashboard.bulkTargetLanguage')"
-                            >
-                                <option
-                                    v-for="language in availableLanguages"
-                                    :key="language.id"
-                                    :value="language.locale"
-                                >
-                                    {{ language.name }} ({{ language.locale }})
-                                </option>
-                            </sw-select-field>
+                                :options="languageOptions"
+                                labelProperty="label"
+                                valueProperty="value"
+                            />
 
                             <sw-button
                                 variant="primary"
@@ -311,31 +301,21 @@
 
                     <div style="margin-top: 16px;">
                         <sw-container columns="1fr 1fr auto" gap="16px">
-                            <sw-select-field
-                                v-model="snippetFilesSourceLang"
+                            <sw-single-select
+                                v-model:value="snippetFilesSourceLang"
                                 :label="$tc('vivatura-translator.dashboard.bulkSourceLanguage')"
-                            >
-                                <option
-                                    v-for="language in availableLanguages"
-                                    :key="language.id"
-                                    :value="language.locale"
-                                >
-                                    {{ language.name }} ({{ language.locale }})
-                                </option>
-                            </sw-select-field>
+                                :options="languageOptions"
+                                labelProperty="label"
+                                valueProperty="value"
+                            />
 
-                            <sw-select-field
-                                v-model="snippetFilesTargetLang"
+                            <sw-single-select
+                                v-model:value="snippetFilesTargetLang"
                                 :label="$tc('vivatura-translator.dashboard.bulkTargetLanguage')"
-                            >
-                                <option
-                                    v-for="language in availableLanguages"
-                                    :key="language.id"
-                                    :value="language.locale"
-                                >
-                                    {{ language.name }} ({{ language.locale }})
-                                </option>
-                            </sw-select-field>
+                                :options="languageOptions"
+                                labelProperty="label"
+                                valueProperty="value"
+                            />
 
                             <sw-button
                                 variant="primary"

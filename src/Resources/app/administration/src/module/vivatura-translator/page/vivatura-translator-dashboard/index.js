@@ -132,6 +132,14 @@ Component.register('vivatura-translator-dashboard', {
 
         canTranslateAllSnippetSets() {
             return this.bulkSourceIso && this.bulkTargetIso && this.bulkSourceIso !== this.bulkTargetIso;
+        },
+
+        languageOptions() {
+            return this.availableLanguages.map(lang => ({
+                id: lang.id,
+                value: lang.locale,
+                label: `${lang.name} (${lang.locale})`
+            }));
         }
     },
 
