@@ -39,7 +39,9 @@ class AnthropicClient
             throw new \RuntimeException('Anthropic API key not configured. Please set it in plugin settings.');
         }
 
-        $userPrompt = $this->buildUserPrompt($text, $targetLanguage);
+        // Convert ISO code to full language name for better prompt understanding
+        $languageName = $this->getLanguageName($targetLanguage);
+        $userPrompt = $this->buildUserPrompt($text, $languageName);
         $maxTokens = $this->getMaxTokens($model);
 
         $payload = [
@@ -79,8 +81,11 @@ class AnthropicClient
         // Build batch request with JSON structure for easy parsing
         $jsonInput = json_encode($texts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
+        // Convert ISO code to full language name
+        $languageName = $this->getLanguageName($targetLanguage);
+
         $userPrompt = <<<PROMPT
-Translate the following JSON object values to {$targetLanguage}.
+Translate the following JSON object values to {$languageName} ({$targetLanguage}).
 Keep the JSON keys unchanged, only translate the values.
 Return ONLY the translated JSON object, no additional text.
 
@@ -252,5 +257,33 @@ PROMPT;
         }
 
         return trim($response['content'][0]['text']);
+    }
+
+    private function getLanguageName(string $isoCode): string
+    {
+        $commonLanguages = [
+            'de-DE' => 'German',
+            'en-GB' => 'English (UK)',
+            'en-US' => 'English (US)',
+            'fr-FR' => 'French',
+            'es-ES' => 'Spanish',
+            'it-IT' => 'Italian',
+            'nl-NL' => 'Dutch',
+            'pl-PL' => 'Polish',
+            'pt-PT' => 'Portuguese',
+            'ru-RU' => 'Russian',
+            'zh-CN' => 'Chinese (Simplified)',
+            'ja-JP' => 'Japanese',
+            'tr-TR' => 'Turkish',
+            'sv-SE' => 'Swedish',
+            'da-DK' => 'Danish',
+            'no-NO' => 'Norwegian',
+            'fi-FI' => 'Finnish',
+            'cs-CZ' => 'Czech',
+            'hu-HU' => 'Hungarian',
+            'ro-RO' => 'Romanian'
+        ];
+
+        return $commonLanguages[$isoCode] ?? $isoCode;
     }
 }
