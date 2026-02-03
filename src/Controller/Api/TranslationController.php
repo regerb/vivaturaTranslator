@@ -621,6 +621,9 @@ class TranslationController extends AbstractController
         }
 
         try {
+            // Increase time limit for this request
+            set_time_limit(600);
+
             // Read source snippets
             $sourceSnippets = $this->snippetFileScanner->readSnippetFile($sourceFilePath);
 
@@ -654,8 +657,8 @@ class TranslationController extends AbstractController
             // Get system prompt for target language
             $systemPrompt = $this->getSystemPromptForLanguage($targetLanguage, $context);
 
-            // Translate in smaller chunks (5 instead of 10) to avoid timeouts
-            $chunks = array_chunk($sourceSnippets, 5, true);
+            // Translate in smaller chunks (3 instead of 5) to avoid timeouts
+            $chunks = array_chunk($sourceSnippets, 3, true);
             $translatedSnippets = [];
             $errors = [];
 
@@ -879,7 +882,7 @@ class TranslationController extends AbstractController
             $systemPrompt = $this->getSystemPromptForLanguage($targetLanguage, $context);
 
             // Translate in smaller chunks
-            $chunks = array_chunk($snippets, 5, true);
+            $chunks = array_chunk($snippets, 3, true);
             $translated = [];
             $errors = 0;
 

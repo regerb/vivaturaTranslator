@@ -331,8 +331,8 @@ Component.register('vivatura-translator-dashboard', {
                      return;
                 }
 
-                // Split into batches of 50 snippets
-                const batchSize = 50;
+                // Split into batches of 20 snippets
+                const batchSize = 20;
                 let batches = [];
 
                 for (let i = 0; i < keysToProcess.length; i += batchSize) {
