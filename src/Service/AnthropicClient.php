@@ -96,6 +96,12 @@ IMPORTANT RULES FOR HTML AND TWIG:
 - Do NOT translate any Twig variable names or block definitions.
 - KEEP all HTML structure and Twig syntax exactly as it is.
 
+IMPORTANT RULES FOR PLURALIZATION:
+- If a source text contains plural forms separated by a pipe (|), you MUST adapt the number of forms to the target language rules.
+- Polish (pl) requires 3 forms (one | few | many/other). Example: "1 plik | %count% pliki | %count% plików".
+- German (de) and English (en) use 2 forms (one | other).
+- Ensure you generate the correct number of pipe-separated sections for the target language.
+
 ```json
 {$jsonInput}
 ```
