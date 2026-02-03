@@ -702,7 +702,7 @@ class TranslationController extends AbstractController
                 'success' => true,
                 'translated' => count($translatedSnippets),
                 'errors' => count($errors),
-                'total' => count($sourceSnippets) + count($errors), // total processed in this run
+                'total' => count($sourceSnippets), // Total attempted in this run
                 'targetFile' => $targetFilePath
             ]);
         } catch (\Exception $e) {
