@@ -127,9 +127,17 @@ class ContentExtractor
         ];
 
         foreach ($textFields as $field) {
+            // Case 1: Standard Shopware structure -> config[field][value]
             if (isset($config[$field]['value']) && !empty($config[$field]['value'])) {
                 $value = $config[$field]['value'];
                 if (is_string($value) && !$this->isMediaUrl($value)) {
+                    $content["slot_{$index}_{$field}"] = $value;
+                }
+            }
+            // Case 2: Direct value -> config[field] (used by some custom elements)
+            elseif (isset($config[$field]) && is_string($config[$field]) && !empty($config[$field])) {
+                $value = $config[$field];
+                if (!$this->isMediaUrl($value)) {
                     $content["slot_{$index}_{$field}"] = $value;
                 }
             }

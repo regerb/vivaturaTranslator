@@ -291,8 +291,19 @@ class TranslationService
                         $config = $slotMapping[$slotIndex]['config'];
 
                         // Update the config value
-                        if (isset($config[$field])) {
+                        // Check for standard Shopware structure: config[field][value]
+                        if (isset($config[$field]) && is_array($config[$field]) && array_key_exists('value', $config[$field])) {
                             $config[$field]['value'] = $value;
+
+                            if (!isset($slotUpdates[$slotId])) {
+                                $slotUpdates[$slotId] = $config;
+                            } else {
+                                $slotUpdates[$slotId][$field] = $config[$field];
+                            }
+                        }
+                        // Check for direct value structure: config[field] = "string"
+                        elseif (isset($config[$field]) && is_string($config[$field])) {
+                            $config[$field] = $value;
 
                             if (!isset($slotUpdates[$slotId])) {
                                 $slotUpdates[$slotId] = $config;
