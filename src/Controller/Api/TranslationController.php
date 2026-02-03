@@ -687,12 +687,16 @@ class TranslationController extends AbstractController
                 }
             }
 
-            // If we filtered earlier (overwrite=false), we need to merge with existing translations before writing
-            if (!$overwriteExisting && file_exists($targetFilePath)) {
+            // SMART MERGE LOGIC:
+            // Always read existing file to preserve keys that might have failed translation
+            // or keys that were not part of the source file (if any).
+            $finalSnippets = $translatedSnippets;
+
+            if (file_exists($targetFilePath)) {
                 $existingSnippets = $this->snippetFileScanner->readSnippetFile($targetFilePath);
+                // Merge: Existing entries are overwritten by new translations ($translatedSnippets)
+                // But entries missing from $translatedSnippets (due to errors) are kept from $existingSnippets
                 $finalSnippets = array_merge($existingSnippets, $translatedSnippets);
-            } else {
-                $finalSnippets = $translatedSnippets;
             }
 
             // Write translated snippets
