@@ -92,5 +92,25 @@
             <helpText>Dieser Prompt wird verwendet, wenn keine sprachspezifischen Anweisungen hinterlegt sind.</helpText>
             <helpText lang="en-GB">This prompt is used when no language-specific instructions are configured.</helpText>
         </input-field>
+        <input-field type="textarea">
+            <name>technicalRulesPrompt</name>
+            <label>Technische Regeln (HTML/Twig)</label>
+            <label lang="en-GB">Technical Rules (HTML/Twig)</label>
+            <defaultValue>IMPORTANT RULES FOR HTML AND TWIG:
+- The values may contain HTML tags (like &lt;div&gt;, &lt;p&gt;, &lt;span&gt;) and Twig syntax (like {{ variable }}, {% block %}).
+- YOU MUST TRANSLATE ALL human-readable text content inside ALL HTML tags. Do not skip any text.
+- Example: "&lt;p&gt;Hello&lt;/p&gt;&lt;h1&gt;World&lt;/h1&gt;" -> "&lt;p&gt;Hallo&lt;/p&gt;&lt;h1&gt;Welt&lt;/h1&gt;" (Translate BOTH parts).
+- Do NOT translate HTML tag names, attributes (class, id, style, etc.), or values within attributes.
+- Do NOT translate any Twig variable names or block definitions.
+- KEEP all HTML structure and Twig syntax exactly as it is.
+
+IMPORTANT RULES FOR PLURALIZATION:
+- If a source text contains plural forms separated by a pipe (|), you MUST adapt the number of forms to the target language rules.
+- Polish (pl) requires 3 forms (one | few | many/other). Example: "1 plik | %count% pliki | %count% plików".
+- German (de) and English (en) use 2 forms (one | other).
+- Ensure you generate the correct number of pipe-separated sections for the target language.</defaultValue>
+            <helpText>Definiert die Regeln für den Umgang mit HTML, Twig und Pluralisierung. Ändern Sie dies nur, wenn Sie wissen, was Sie tun.</helpText>
+            <helpText lang="en-GB">Defines rules for handling HTML, Twig, and pluralization. Only change this if you know what you are doing.</helpText>
+        </input-field>
     </card>
 </config>

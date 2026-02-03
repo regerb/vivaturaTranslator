@@ -84,23 +84,14 @@ class AnthropicClient
         // Convert ISO code to full language name
         $languageName = $this->getLanguageName($targetLanguage);
 
+        $technicalRules = $this->getTechnicalRulesPrompt();
+
         $userPrompt = <<<PROMPT
 Translate the following JSON object values to {$languageName} ({$targetLanguage}).
 Keep the JSON keys unchanged, only translate the values.
 Return ONLY the translated JSON object, no additional text.
 
-IMPORTANT RULES FOR HTML AND TWIG:
-- The values may contain HTML tags (like <div>, <p>, <span>) and Twig syntax (like {{ variable }}, {% block %}).
-- ONLY translate the human-readable text content inside the HTML tags.
-- Do NOT translate HTML tag names, attributes (class, id, style, etc.), or values within attributes.
-- Do NOT translate any Twig variable names or block definitions.
-- KEEP all HTML structure and Twig syntax exactly as it is.
-
-IMPORTANT RULES FOR PLURALIZATION:
-- If a source text contains plural forms separated by a pipe (|), you MUST adapt the number of forms to the target language rules.
-- Polish (pl) requires 3 forms (one | few | many/other). Example: "1 plik | %count% pliki | %count% plików".
-- German (de) and English (en) use 2 forms (one | other).
-- Ensure you generate the correct number of pipe-separated sections for the target language.
+{$technicalRules}
 
 ```json
 {$jsonInput}
@@ -199,20 +190,43 @@ PROMPT;
 
     private function buildUserPrompt(string $text, string $targetLanguage): string
     {
+        $technicalRules = $this->getTechnicalRulesPrompt();
+
         return <<<PROMPT
 Translate the following text to {$targetLanguage}.
 Return ONLY the translated text, no explanations or additional content.
 
-IMPORTANT RULES FOR HTML AND TWIG:
-- The text may contain HTML tags (like <div>, <p>, <span>) and Twig syntax (like {{ variable }}, {% block %}).
-- ONLY translate the human-readable text content inside the HTML tags.
-- Do NOT translate HTML tag names, attributes (class, id, style, etc.), or values within attributes.
-- Do NOT translate any Twig variable names or block definitions.
-- KEEP all HTML structure and Twig syntax exactly as it is.
+{$technicalRules}
 
 Text to translate:
 {$text}
 PROMPT;
+    }
+
+    private function getTechnicalRulesPrompt(): string
+    {
+        $prompt = $this->systemConfigService->get('VivaturaTranslator.config.technicalRulesPrompt');
+
+        if (!empty($prompt)) {
+            return $prompt;
+        }
+
+        // Fallback default rules
+        return <<<RULES
+IMPORTANT RULES FOR HTML AND TWIG:
+- The values may contain HTML tags (like <div>, <p>, <span>) and Twig syntax (like {{ variable }}, {% block %}).
+- YOU MUST TRANSLATE ALL human-readable text content inside ALL HTML tags. Do not skip any text.
+- Example: "<p>Hello</p><h1>World</h1>" -> "<p>Hallo</p><h1>Welt</h1>" (Translate BOTH parts).
+- Do NOT translate HTML tag names, attributes (class, id, style, etc.), or values within attributes.
+- Do NOT translate any Twig variable names or block definitions.
+- KEEP all HTML structure and Twig syntax exactly as it is.
+
+IMPORTANT RULES FOR PLURALIZATION:
+- If a source text contains plural forms separated by a pipe (|), you MUST adapt the number of forms to the target language rules.
+- Polish (pl) requires 3 forms (one | few | many/other). Example: "1 plik | %count% pliki | %count% plików".
+- German (de) and English (en) use 2 forms (one | other).
+- Ensure you generate the correct number of pipe-separated sections for the target language.
+RULES;
     }
 
     private function makeRequest(array $payload, string $apiKey): array
