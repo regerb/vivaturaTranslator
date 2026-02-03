@@ -687,16 +687,36 @@ class TranslationController extends AbstractController
                 }
             }
 
-            // SMART MERGE LOGIC:
-            // Always read existing file to preserve keys that might have failed translation
-            // or keys that were not part of the source file (if any).
-            $finalSnippets = $translatedSnippets;
+            // SMART REPLACE LOGIC:
+            // If overwriting: We want to match the SOURCE keys exactly (clean up obsolete keys in target).
+            // But we still want to fall back to existing translations if the new translation failed.
 
-            if (file_exists($targetFilePath)) {
+            if ($overwriteExisting && file_exists($targetFilePath)) {
                 $existingSnippets = $this->snippetFileScanner->readSnippetFile($targetFilePath);
-                // Merge: Existing entries are overwritten by new translations ($translatedSnippets)
-                // But entries missing from $translatedSnippets (due to errors) are kept from $existingSnippets
+                $finalSnippets = [];
+
+                foreach ($sourceSnippets as $key => $sourceValue) {
+                    if (isset($translatedSnippets[$key])) {
+                        // Successfully translated
+                        $finalSnippets[$key] = $translatedSnippets[$key];
+                    } elseif (isset($existingSnippets[$key])) {
+                        // Translation failed (or not returned), but we have an existing value -> Keep it
+                        $finalSnippets[$key] = $existingSnippets[$key];
+                        // If it wasn't in errors list, maybe we should treat it as error?
+                        // But translatedSnippets should contain all successful ones.
+                    }
+                    // If neither, it's missing (failed and no backup) - sadly unavoidable if we want to sync.
+                }
+                // Note: Keys present in $existingSnippets but NOT in $sourceSnippets are effectively deleted (Clean up)
+            }
+            elseif (!$overwriteExisting && file_exists($targetFilePath)) {
+                // Merge mode: Keep everything from existing, add/update new translations
+                $existingSnippets = $this->snippetFileScanner->readSnippetFile($targetFilePath);
                 $finalSnippets = array_merge($existingSnippets, $translatedSnippets);
+            }
+            else {
+                // New file creation or simple overwrite if target didn't exist
+                $finalSnippets = $translatedSnippets;
             }
 
             // Write translated snippets
@@ -776,6 +796,15 @@ class TranslationController extends AbstractController
         }
 
         try {
+            if (!file_exists($filePath)) {
+                return new JsonResponse([
+                    'success' => true, // Not an error, just empty
+                    'snippets' => [],
+                    'count' => 0,
+                    'message' => 'File not found'
+                ]);
+            }
+
             $snippets = $this->snippetFileScanner->readSnippetFile($filePath);
 
             return new JsonResponse([

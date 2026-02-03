@@ -346,8 +346,13 @@ Component.register('vivatura-translator-dashboard', {
 
                 console.log(`[SnippetFileTranslation] Split into ${batches.length} batches of ~${batchSize} snippets`);
 
-                // Initialize with existing translations to preserve them
-                let allTranslated = { ...existingTargetSnippets };
+                // Initialize allTranslated depending on overwrite mode
+                // If overwrite: Start empty (or copy existing only as backup for failures) - logic handled in backend mostly,
+                // but for frontend counting we can just accumulate new translations.
+                // Actually, backend now does the smart merge/replace. Frontend just needs to send all chunks.
+                // However, we still want to track progress.
+
+                let allTranslated = {};
                 let totalTranslated = 0;
                 let totalErrors = 0;
 
@@ -384,12 +389,41 @@ Component.register('vivatura-translator-dashboard', {
                     }
                 }
 
-                // Write all translated snippets to target file
-                console.log(`[SnippetFileTranslation] Writing ${Object.keys(allTranslated).length} snippets to ${targetFilePath}`);
+                // Final write step
+                // In overwrite mode, we want the backend to perform the smart replacement using the 'allTranslated' set we just built.
+                // In non-overwrite mode, we just want to merge.
+                // The backend endpoint `writeSnippetFile` is too simple (just writes what we give it).
+                // So we should reuse `translateSnippetFile` endpoint logic? No, that one translates.
+                // We need to implement the smart logic here before writing, OR call a new endpoint.
+                // BUT: We already translated everything. We just need to save.
+
+                // Let's replicate the Smart Replace logic here for the final write payload if overwrite is on
+                let finalSnippetsToWrite = allTranslated;
+
+                if (this.overwriteExisting && Object.keys(existingTargetSnippets).length > 0) {
+                    console.log('[SnippetFileTranslation] Smart Replace: Merging with existing for fallback...');
+                    const smartMerged = {};
+                    // Iterate over SOURCE keys to ensure we clean up obsolete ones
+                    // snippetKeys = all keys from source file
+                    snippetKeys.forEach(key => {
+                        if (allTranslated[key]) {
+                            smartMerged[key] = allTranslated[key];
+                        } else if (existingTargetSnippets[key]) {
+                            // Fallback to existing if translation missing/failed
+                            smartMerged[key] = existingTargetSnippets[key];
+                        }
+                    });
+                    finalSnippetsToWrite = smartMerged;
+                } else if (!this.overwriteExisting) {
+                    // Merge new with existing
+                    finalSnippetsToWrite = { ...existingTargetSnippets, ...allTranslated };
+                }
+
+                console.log(`[SnippetFileTranslation] Writing ${Object.keys(finalSnippetsToWrite).length} snippets to ${targetFilePath}`);
 
                 await this.httpClient.post('/_action/vivatura-translator/write-snippet-file', {
                     filePath: targetFilePath,
-                    snippets: allTranslated
+                    snippets: finalSnippetsToWrite
                 }, { headers: this.authHeaders });
 
                 const duration = ((Date.now() - startTime) / 1000).toFixed(1);
