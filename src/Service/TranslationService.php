@@ -683,8 +683,6 @@ class TranslationService
 
     public function getAvailableLanguages(Context $context): array
     {
-        $sourceLanguageCode = $this->systemConfigService->get('VivaturaTranslator.config.sourceLanguage') ?? 'de-DE';
-
         $criteria = new Criteria();
         $criteria->addAssociation('locale');
 
@@ -693,13 +691,11 @@ class TranslationService
         $result = [];
         foreach ($languages as $language) {
             $localeCode = $language->getLocale()?->getCode();
-            if ($localeCode !== $sourceLanguageCode) {
-                $result[] = [
-                    'id' => $language->getId(),
-                    'name' => $language->getName(),
-                    'locale' => $localeCode,
-                ];
-            }
+            $result[] = [
+                'id' => $language->getId(),
+                'name' => $language->getName(),
+                'locale' => $localeCode,
+            ];
         }
 
         return $result;
