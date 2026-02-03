@@ -612,6 +612,7 @@ class TranslationController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $sourceFilePath = $data['sourceFilePath'] ?? null;
         $targetLanguage = $data['targetLanguage'] ?? null;
+        $overwriteExisting = $data['overwriteExisting'] ?? false;
 
         if (empty($sourceFilePath) || empty($targetLanguage)) {
             return new JsonResponse([
@@ -628,6 +629,26 @@ class TranslationController extends AbstractController
                     'success' => true,
                     'message' => 'No snippets found in source file'
                 ]);
+            }
+
+            // If not overwriting, we need to read the target file (if it exists) and filter
+            $targetFilePath = $this->generateTargetFilePath($sourceFilePath, $targetLanguage);
+
+            if (!$overwriteExisting && file_exists($targetFilePath)) {
+                $targetSnippets = $this->snippetFileScanner->readSnippetFile($targetFilePath);
+
+                // Remove snippets that already exist in target
+                $sourceSnippets = array_diff_key($sourceSnippets, $targetSnippets);
+
+                if (empty($sourceSnippets)) {
+                    return new JsonResponse([
+                        'success' => true,
+                        'message' => 'All snippets already translated',
+                        'translated' => 0,
+                        'total' => 0,
+                        'targetFile' => $targetFilePath
+                    ]);
+                }
             }
 
             // Get system prompt for target language
@@ -666,17 +687,22 @@ class TranslationController extends AbstractController
                 }
             }
 
-            // Generate target file path
-            $targetFilePath = $this->generateTargetFilePath($sourceFilePath, $targetLanguage);
+            // If we filtered earlier (overwrite=false), we need to merge with existing translations before writing
+            if (!$overwriteExisting && file_exists($targetFilePath)) {
+                $existingSnippets = $this->snippetFileScanner->readSnippetFile($targetFilePath);
+                $finalSnippets = array_merge($existingSnippets, $translatedSnippets);
+            } else {
+                $finalSnippets = $translatedSnippets;
+            }
 
             // Write translated snippets
-            $this->snippetFileScanner->writeSnippetFile($targetFilePath, $translatedSnippets);
+            $this->snippetFileScanner->writeSnippetFile($targetFilePath, $finalSnippets);
 
             return new JsonResponse([
                 'success' => true,
                 'translated' => count($translatedSnippets),
                 'errors' => count($errors),
-                'total' => count($sourceSnippets),
+                'total' => count($sourceSnippets) + count($errors), // total processed in this run
                 'targetFile' => $targetFilePath
             ]);
         } catch (\Exception $e) {
