@@ -109,8 +109,23 @@ class ContentExtractor
         }
 
         // Text-based slot types
-        $textFields = ['content', 'title', 'headline', 'text', 'label', 'altText', 'linkText'];
-        
+        $textFields = [
+            'content',
+            'title',
+            'subtitle',
+            'subline',
+            'headline',
+            'text',
+            'description',
+            'label',
+            'altText',
+            'linkText',
+            'buttonText',
+            'caption',
+            'confirmationText',
+            'iframeTitle'
+        ];
+
         foreach ($textFields as $field) {
             if (isset($config[$field]['value']) && !empty($config[$field]['value'])) {
                 $value = $config[$field]['value'];

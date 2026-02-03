@@ -167,6 +167,14 @@ class TranslationService
         }
 
         $content = $this->contentExtractor->extractCmsPageContent($page);
+
+        $this->logger->info('TranslationService: CMS Page content extracted', [
+            'pageId' => $pageId,
+            'contentFields' => array_keys($content),
+            'contentCount' => count($content),
+            'content' => $content,
+        ]);
+
         if (empty($content)) {
             return ['success' => true, 'message' => 'No translatable content found'];
         }
@@ -189,8 +197,22 @@ class TranslationService
                 }
             }
 
+            $this->logger->info('TranslationService: Translating CMS page to language', [
+                'pageId' => $pageId,
+                'targetLanguageId' => $languageId,
+                'targetLanguageCode' => $languageCode,
+            ]);
+
             try {
                 $translated = $this->anthropicClient->translateBatch($content, $languageCode, $systemPrompt);
+
+                $this->logger->info('TranslationService: CMS Page translation received', [
+                    'pageId' => $pageId,
+                    'targetLanguageCode' => $languageCode,
+                    'translatedFields' => array_keys($translated),
+                    'translated' => $translated,
+                ]);
+
                 $this->saveCmsPageTranslation($pageId, $page, $languageId, $translated, $slotMapping, $context);
                 $results[$languageCode] = ['success' => true, 'fields' => count($translated)];
             } catch (\Exception $e) {
