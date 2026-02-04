@@ -168,7 +168,7 @@ class TranslationService
 
         $content = $this->contentExtractor->extractCmsPageContent($page);
 
-        $this->logger->info('TranslationService: CMS Page content extracted', [
+        $this->logger->warning('TranslationService: CMS Page content extracted', [
             'pageId' => $pageId,
             'contentFields' => array_keys($content),
             'contentCount' => count($content),
@@ -197,7 +197,7 @@ class TranslationService
                 }
             }
 
-            $this->logger->info('TranslationService: Translating CMS page to language', [
+            $this->logger->warning('TranslationService: Translating CMS page to language', [
                 'pageId' => $pageId,
                 'targetLanguageId' => $languageId,
                 'targetLanguageCode' => $languageCode,
@@ -206,7 +206,7 @@ class TranslationService
             try {
                 $translated = $this->anthropicClient->translateBatch($content, $languageCode, $systemPrompt);
 
-                $this->logger->info('TranslationService: CMS Page translation received', [
+                $this->logger->warning('TranslationService: CMS Page translation received', [
                     'pageId' => $pageId,
                     'targetLanguageCode' => $languageCode,
                     'translatedFields' => array_keys($translated),
