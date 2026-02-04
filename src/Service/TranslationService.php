@@ -290,6 +290,16 @@ class TranslationService
                         $slotId = $slotMapping[$slotIndex]['slotId'];
                         $config = $slotMapping[$slotIndex]['config'];
 
+                        $this->logger->warning(sprintf(
+                            '[CMS Save] Processing %s for slot %d (ID: %s), field exists in config: %s, is_array: %s, is_string: %s',
+                            $key,
+                            $slotIndex,
+                            $slotId,
+                            isset($config[$field]) ? 'YES' : 'NO',
+                            isset($config[$field]) && is_array($config[$field]) ? 'YES' : 'NO',
+                            isset($config[$field]) && is_string($config[$field]) ? 'YES' : 'NO'
+                        ));
+
                         // Update the config value
                         // Check for standard Shopware structure: config[field][value]
                         if (isset($config[$field]) && is_array($config[$field]) && array_key_exists('value', $config[$field])) {
@@ -300,6 +310,12 @@ class TranslationService
                             } else {
                                 $slotUpdates[$slotId][$field] = $config[$field];
                             }
+
+                            $this->logger->warning(sprintf(
+                                '[CMS Save] Updated %s (Case 1 - array with value): %s',
+                                $key,
+                                substr($value, 0, 50)
+                            ));
                         }
                         // Check for direct value structure: config[field] = "string"
                         elseif (isset($config[$field]) && is_string($config[$field])) {
@@ -310,6 +326,18 @@ class TranslationService
                             } else {
                                 $slotUpdates[$slotId][$field] = $config[$field];
                             }
+
+                            $this->logger->warning(sprintf(
+                                '[CMS Save] Updated %s (Case 2 - direct string): %s',
+                                $key,
+                                substr($value, 0, 50)
+                            ));
+                        } else {
+                            $this->logger->warning(sprintf(
+                                '[CMS Save] SKIPPED %s - field not found or wrong type in config. Config keys: %s',
+                                $key,
+                                json_encode(array_keys($config))
+                            ));
                         }
                     }
                 }

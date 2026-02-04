@@ -126,12 +126,28 @@ class ContentExtractor
             'iframeTitle'
         ];
 
+        // Log the full config for debugging subtitle issues
+        $configKeys = array_keys($config);
+        if (in_array('subtitle', $configKeys) || isset($config['subtitle'])) {
+            error_log(sprintf(
+                '[CMS Extraction] Slot %d has subtitle config: %s',
+                $index,
+                json_encode($config['subtitle'] ?? 'NOT_FOUND')
+            ));
+        }
+
         foreach ($textFields as $field) {
             // Case 1: Standard Shopware structure -> config[field][value]
             if (isset($config[$field]['value']) && !empty($config[$field]['value'])) {
                 $value = $config[$field]['value'];
                 if (is_string($value) && !$this->isMediaUrl($value)) {
                     $content["slot_{$index}_{$field}"] = $value;
+                    error_log(sprintf(
+                        '[CMS Extraction] Extracted slot_%d_%s (Case 1): %s',
+                        $index,
+                        $field,
+                        substr($value, 0, 50)
+                    ));
                 }
             }
             // Case 2: Direct value -> config[field] (used by some custom elements)
@@ -139,6 +155,12 @@ class ContentExtractor
                 $value = $config[$field];
                 if (!$this->isMediaUrl($value)) {
                     $content["slot_{$index}_{$field}"] = $value;
+                    error_log(sprintf(
+                        '[CMS Extraction] Extracted slot_%d_%s (Case 2): %s',
+                        $index,
+                        $field,
+                        substr($value, 0, 50)
+                    ));
                 }
             }
         }
