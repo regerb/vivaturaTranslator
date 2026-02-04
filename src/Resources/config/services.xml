@@ -26,7 +26,9 @@
         </service>
 
         <!-- Content Extractor -->
-        <service id="Vivatura\VivaturaTranslator\Service\ContentExtractor"/>
+        <service id="Vivatura\VivaturaTranslator\Service\ContentExtractor">
+            <argument type="service" id="logger"/>
+        </service>
 
         <!-- Snippet File Scanner -->
         <service id="Vivatura\VivaturaTranslator\Service\SnippetFileScanner">

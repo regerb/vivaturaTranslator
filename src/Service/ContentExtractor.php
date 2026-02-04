@@ -2,12 +2,17 @@
 
 namespace Vivatura\VivaturaTranslator\Service;
 
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\System\Snippet\SnippetEntity;
 
 class ContentExtractor
 {
+    public function __construct(
+        private readonly LoggerInterface $logger
+    ) {
+    }
     /**
      * Translatable product fields
      */
@@ -129,7 +134,7 @@ class ContentExtractor
         // Log the full config for debugging subtitle issues
         $configKeys = array_keys($config);
         if (in_array('subtitle', $configKeys) || isset($config['subtitle'])) {
-            error_log(sprintf(
+            $this->logger->warning(sprintf(
                 '[CMS Extraction] Slot %d has subtitle config: %s',
                 $index,
                 json_encode($config['subtitle'] ?? 'NOT_FOUND')
@@ -142,7 +147,7 @@ class ContentExtractor
                 $value = $config[$field]['value'];
                 if (is_string($value) && !$this->isMediaUrl($value)) {
                     $content["slot_{$index}_{$field}"] = $value;
-                    error_log(sprintf(
+                    $this->logger->warning(sprintf(
                         '[CMS Extraction] Extracted slot_%d_%s (Case 1): %s',
                         $index,
                         $field,
@@ -155,7 +160,7 @@ class ContentExtractor
                 $value = $config[$field];
                 if (!$this->isMediaUrl($value)) {
                     $content["slot_{$index}_{$field}"] = $value;
-                    error_log(sprintf(
+                    $this->logger->warning(sprintf(
                         '[CMS Extraction] Extracted slot_%d_%s (Case 2): %s',
                         $index,
                         $field,
