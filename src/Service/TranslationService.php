@@ -472,8 +472,10 @@ class TranslationService
             ];
         }
 
-        // Reduce chunk size to avoid API errors - smaller chunks are more reliable
-        $chunks = array_chunk($textsToTranslate, 10, true);
+        // Keep chunk payloads small to reduce timeouts on large HTML-rich snippet values.
+        $maxChunkItems = 5;
+        $maxChunkChars = 16000;
+        $chunks = $this->buildSnippetTranslationChunks($textsToTranslate, $maxChunkItems, $maxChunkChars);
         $translatedTexts = [];
         $errors = [];
         $chunkNumber = 0;
@@ -482,7 +484,8 @@ class TranslationService
         $this->logger->info('TranslationService: Starting snippet translation', [
             'totalSnippets' => count($textsToTranslate),
             'totalChunks' => $totalChunks,
-            'chunkSize' => 10
+            'maxChunkItems' => $maxChunkItems,
+            'maxChunkChars' => $maxChunkChars
         ]);
 
         // TEMPORARY DEBUG: Log start
@@ -966,5 +969,37 @@ class TranslationService
         }
 
         return $result;
+    }
+
+    /**
+     * @param array<string, string> $texts
+     * @return array<int, array<string, string>>
+     */
+    private function buildSnippetTranslationChunks(array $texts, int $maxItems, int $maxChars): array
+    {
+        $chunks = [];
+        $currentChunk = [];
+        $currentChars = 0;
+
+        foreach ($texts as $key => $value) {
+            $entryChars = strlen($key) + strlen($value);
+            $wouldExceedItems = count($currentChunk) >= $maxItems;
+            $wouldExceedChars = !empty($currentChunk) && ($currentChars + $entryChars > $maxChars);
+
+            if ($wouldExceedItems || $wouldExceedChars) {
+                $chunks[] = $currentChunk;
+                $currentChunk = [];
+                $currentChars = 0;
+            }
+
+            $currentChunk[$key] = $value;
+            $currentChars += $entryChars;
+        }
+
+        if (!empty($currentChunk)) {
+            $chunks[] = $currentChunk;
+        }
+
+        return $chunks;
     }
 }

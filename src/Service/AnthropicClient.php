@@ -222,43 +222,88 @@ RULES;
 
     private function makeRequest(array $payload, string $apiKey): array
     {
-        $ch = curl_init(self::API_URL);
-        
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'x-api-key: ' . $apiKey,
-                'anthropic-version: ' . self::API_VERSION,
-            ],
-            CURLOPT_POSTFIELDS => json_encode($payload),
-            CURLOPT_TIMEOUT => 120,
-        ]);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        if ($error) {
-            $this->logger->error('Anthropic API curl error', ['error' => $error]);
-            throw new \RuntimeException('Failed to connect to Anthropic API: ' . $error);
+        $requestBody = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($requestBody)) {
+            throw new \RuntimeException('Failed to encode Anthropic payload.');
         }
 
-        $data = json_decode($response, true);
+        $maxAttempts = 3;
+        $retryableHttpCodes = [408, 425, 429, 500, 502, 503, 504];
+        $lastError = 'Unknown Anthropic API error';
 
-        if ($httpCode !== 200) {
-            $errorMessage = $data['error']['message'] ?? 'Unknown error';
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $ch = curl_init(self::API_URL);
+
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'x-api-key: ' . $apiKey,
+                    'anthropic-version: ' . self::API_VERSION,
+                ],
+                CURLOPT_POSTFIELDS => $requestBody,
+                CURLOPT_CONNECTTIMEOUT => 20,
+                CURLOPT_TIMEOUT => 180,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlErrNo = curl_errno($ch);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if ($error !== '') {
+                $lastError = 'Failed to connect to Anthropic API: ' . $error;
+                $isTimeout = $curlErrNo === CURLE_OPERATION_TIMEDOUT || str_contains(strtolower($error), 'timed out');
+
+                if ($isTimeout && $attempt < $maxAttempts) {
+                    $this->logger->warning('Anthropic API timeout, retrying request', [
+                        'attempt' => $attempt,
+                        'maxAttempts' => $maxAttempts,
+                        'curlErrNo' => $curlErrNo
+                    ]);
+                    usleep($this->getRetryBackoffMicroseconds($attempt));
+                    continue;
+                }
+
+                $this->logger->error('Anthropic API curl error', [
+                    'error' => $error,
+                    'curlErrNo' => $curlErrNo,
+                    'attempt' => $attempt
+                ]);
+                throw new \RuntimeException($lastError);
+            }
+
+            $data = is_string($response) ? json_decode($response, true) : null;
+
+            if ($httpCode === 200 && is_array($data)) {
+                return $data;
+            }
+
+            $errorMessage = is_array($data) ? ($data['error']['message'] ?? 'Unknown error') : 'Unknown error';
+            $lastError = 'Anthropic API error: ' . $errorMessage;
+
+            if (in_array($httpCode, $retryableHttpCodes, true) && $attempt < $maxAttempts) {
+                $this->logger->warning('Anthropic API returned retryable status, retrying request', [
+                    'status' => $httpCode,
+                    'attempt' => $attempt,
+                    'maxAttempts' => $maxAttempts,
+                ]);
+                usleep($this->getRetryBackoffMicroseconds($attempt));
+                continue;
+            }
+
             $this->logger->error('Anthropic API error', [
                 'status' => $httpCode,
                 'error' => $errorMessage,
-                'response' => $response
+                'response' => $response,
+                'attempt' => $attempt
             ]);
-            throw new \RuntimeException('Anthropic API error: ' . $errorMessage);
+            throw new \RuntimeException($lastError);
         }
 
-        return $data;
+        throw new \RuntimeException($lastError);
     }
 
     private function extractTranslation(array $response): string
@@ -631,5 +676,14 @@ RULES;
         }
 
         return stripcslashes($token);
+    }
+
+    private function getRetryBackoffMicroseconds(int $attempt): int
+    {
+        return match ($attempt) {
+            1 => 1000000,
+            2 => 2000000,
+            default => 3000000,
+        };
     }
 }
