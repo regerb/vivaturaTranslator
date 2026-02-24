@@ -27,6 +27,33 @@ class ContentExtractor
     ];
 
     /**
+     * Top-level CMS slot fields that can contain translatable text.
+     * Some fields (e.g. items/entries) often store nested arrays (FAQ/accordion elements).
+     */
+    private const CMS_TEXT_FIELDS = [
+        'content',
+        'title',
+        'subtitle',
+        'subline',
+        'headline',
+        'text',
+        'description',
+        'label',
+        'altText',
+        'linkText',
+        'buttonText',
+        'caption',
+        'confirmationText',
+        'iframeTitle',
+        'items',
+        'entries',
+        'accordionItems',
+        'faqItems',
+        'questions',
+        'answers',
+    ];
+
+    /**
      * Extract translatable content from a product
      *
      * @param ProductEntity $product
@@ -107,70 +134,88 @@ class ContentExtractor
     {
         $content = [];
         $config = $slot->getConfig();
-        $slotType = $slot->getType();
 
-        if (empty($config)) {
+        if (empty($config) || !is_array($config)) {
             return $content;
         }
 
-        // Text-based slot types
-        $textFields = [
-            'content',
-            'title',
-            'subtitle',
-            'subline',
-            'headline',
-            'text',
-            'description',
-            'label',
-            'altText',
-            'linkText',
-            'buttonText',
-            'caption',
-            'confirmationText',
-            'iframeTitle'
-        ];
-
-        // Log the full config for debugging subtitle issues
-        $configKeys = array_keys($config);
-        if (in_array('subtitle', $configKeys) || isset($config['subtitle'])) {
-            $this->logger->warning(sprintf(
-                '[CMS Extraction] Slot %d has subtitle config: %s',
-                $index,
-                json_encode($config['subtitle'] ?? 'NOT_FOUND')
-            ));
-        }
-
-        foreach ($textFields as $field) {
-            // Case 1: Standard Shopware structure -> config[field][value]
-            if (isset($config[$field]['value']) && !empty($config[$field]['value'])) {
-                $value = $config[$field]['value'];
-                if (is_string($value) && !$this->isMediaUrl($value)) {
-                    $content["slot_{$index}_{$field}"] = $value;
-                    $this->logger->warning(sprintf(
-                        '[CMS Extraction] Extracted slot_%d_%s (Case 1): %s',
-                        $index,
-                        $field,
-                        substr($value, 0, 50)
-                    ));
-                }
+        foreach (self::CMS_TEXT_FIELDS as $field) {
+            if (!array_key_exists($field, $config)) {
+                continue;
             }
-            // Case 2: Direct value -> config[field] (used by some custom elements)
-            elseif (isset($config[$field]) && is_string($config[$field]) && !empty($config[$field])) {
-                $value = $config[$field];
-                if (!$this->isMediaUrl($value)) {
-                    $content["slot_{$index}_{$field}"] = $value;
-                    $this->logger->warning(sprintf(
-                        '[CMS Extraction] Extracted slot_%d_%s (Case 2): %s',
-                        $index,
-                        $field,
-                        substr($value, 0, 50)
-                    ));
-                }
+
+            // Standard Shopware structure: config[field][value]
+            if (is_array($config[$field]) && array_key_exists('value', $config[$field])) {
+                $this->extractFieldValue($content, $field, $config[$field]['value'], $index);
+                continue;
             }
+
+            // Direct field value used by some custom elements
+            $this->extractFieldValue($content, $field, $config[$field], $index);
         }
 
         return $content;
+    }
+
+    /**
+     * @param array<string, string> $content
+     */
+    private function extractFieldValue(array &$content, string $field, mixed $value, int $slotIndex): void
+    {
+        if (is_string($value) && $this->isTranslatableCmsString($value)) {
+            $content["slot_{$slotIndex}_{$field}"] = $value;
+            return;
+        }
+
+        if (!is_array($value)) {
+            return;
+        }
+
+        $nestedStrings = $this->extractNestedCmsStrings($value);
+        foreach ($nestedStrings as $path => $nestedValue) {
+            $content["slot_{$slotIndex}_{$field}__{$path}"] = $nestedValue;
+        }
+    }
+
+    /**
+     * @param array<mixed> $value
+     * @return array<string, string>
+     */
+    private function extractNestedCmsStrings(array $value, string $pathPrefix = ''): array
+    {
+        $result = [];
+
+        foreach ($value as $key => $item) {
+            $pathSegment = (string) $key;
+            $path = $pathPrefix === '' ? $pathSegment : $pathPrefix . '.' . $pathSegment;
+
+            if (is_array($item)) {
+                $result = array_merge($result, $this->extractNestedCmsStrings($item, $path));
+                continue;
+            }
+
+            if (is_string($item) && $this->isTranslatableCmsString($item)) {
+                $result[$path] = $item;
+            }
+        }
+
+        return $result;
+    }
+
+    private function isTranslatableCmsString(string $value): bool
+    {
+        $trimmed = trim($value);
+
+        if ($trimmed === '' || $this->isMediaUrl($trimmed)) {
+            return false;
+        }
+
+        // Skip purely numeric values and values without any letters.
+        if (is_numeric($trimmed) || !preg_match('/\p{L}/u', $trimmed)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

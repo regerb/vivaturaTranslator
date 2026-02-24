@@ -256,14 +256,6 @@ class TranslationService
 
     private function saveCmsPageTranslation(string $pageId, $page, string $languageId, array $translated, array $slotMapping, Context $context): void
     {
-        // Create language-specific context
-        $translatedContext = new Context(
-            $context->getSource(),
-            $context->getRuleIds(),
-            $context->getCurrencyId(),
-            [$languageId]
-        );
-
         // Update page name if translated
         if (isset($translated['name'])) {
             $this->cmsPageRepository->update([
@@ -280,66 +272,32 @@ class TranslationService
         $slotUpdates = [];
         foreach ($translated as $key => $value) {
             if (str_starts_with($key, 'slot_')) {
-                // Parse key: slot_0_content -> index=0, field=content
-                preg_match('/slot_(\d+)_(.+)/', $key, $matches);
-                if (count($matches) === 3) {
-                    $slotIndex = (int) $matches[1];
-                    $field = $matches[2];
+                if (!preg_match('/slot_(\d+)_(.+)/', $key, $matches) || count($matches) !== 3) {
+                    continue;
+                }
 
-                    if (isset($slotMapping[$slotIndex])) {
-                        $slotId = $slotMapping[$slotIndex]['slotId'];
-                        $config = $slotMapping[$slotIndex]['config'];
+                $slotIndex = (int) $matches[1];
+                $fieldPath = $matches[2];
 
-                        $this->logger->warning(sprintf(
-                            '[CMS Save] Processing %s for slot %d (ID: %s), field exists in config: %s, is_array: %s, is_string: %s',
-                            $key,
-                            $slotIndex,
-                            $slotId,
-                            isset($config[$field]) ? 'YES' : 'NO',
-                            isset($config[$field]) && is_array($config[$field]) ? 'YES' : 'NO',
-                            isset($config[$field]) && is_string($config[$field]) ? 'YES' : 'NO'
-                        ));
+                if (!isset($slotMapping[$slotIndex])) {
+                    continue;
+                }
 
-                        // Update the config value
-                        // Check for standard Shopware structure: config[field][value]
-                        if (isset($config[$field]) && is_array($config[$field]) && array_key_exists('value', $config[$field])) {
-                            $config[$field]['value'] = $value;
+                $slotId = $slotMapping[$slotIndex]['slotId'];
+                $config = $slotUpdates[$slotId] ?? $slotMapping[$slotIndex]['config'];
 
-                            if (!isset($slotUpdates[$slotId])) {
-                                $slotUpdates[$slotId] = $config;
-                            } else {
-                                $slotUpdates[$slotId][$field] = $config[$field];
-                            }
+                if (!is_array($config)) {
+                    continue;
+                }
 
-                            $this->logger->warning(sprintf(
-                                '[CMS Save] Updated %s (Case 1 - array with value): %s',
-                                $key,
-                                substr($value, 0, 50)
-                            ));
-                        }
-                        // Check for direct value structure: config[field] = "string"
-                        elseif (isset($config[$field]) && is_string($config[$field])) {
-                            $config[$field] = $value;
-
-                            if (!isset($slotUpdates[$slotId])) {
-                                $slotUpdates[$slotId] = $config;
-                            } else {
-                                $slotUpdates[$slotId][$field] = $config[$field];
-                            }
-
-                            $this->logger->warning(sprintf(
-                                '[CMS Save] Updated %s (Case 2 - direct string): %s',
-                                $key,
-                                substr($value, 0, 50)
-                            ));
-                        } else {
-                            $this->logger->warning(sprintf(
-                                '[CMS Save] SKIPPED %s - field not found or wrong type in config. Config keys: %s',
-                                $key,
-                                json_encode(array_keys($config))
-                            ));
-                        }
-                    }
+                if ($this->applyCmsConfigTranslation($config, $fieldPath, (string) $value)) {
+                    $slotUpdates[$slotId] = $config;
+                } else {
+                    $this->logger->warning(sprintf(
+                        '[CMS Save] SKIPPED %s - field path not found or non-string target. Config keys: %s',
+                        $key,
+                        json_encode(array_keys($config))
+                    ));
                 }
             }
         }
@@ -355,6 +313,89 @@ class TranslationService
                 ]
             ], $context);
         }
+    }
+
+    /**
+     * Apply translated value to a slot config field path.
+     * Supported keys:
+     * - field
+     * - field__nested.path.0.leaf
+     */
+    private function applyCmsConfigTranslation(array &$config, string $fieldPath, string $value): bool
+    {
+        [$field, $nestedPath] = $this->splitCmsFieldPath($fieldPath);
+
+        if ($field === '' || !array_key_exists($field, $config)) {
+            return false;
+        }
+
+        // Simple field update (existing behavior)
+        if ($nestedPath === null) {
+            if (is_array($config[$field]) && array_key_exists('value', $config[$field])) {
+                $config[$field]['value'] = $value;
+                return true;
+            }
+
+            if (is_string($config[$field])) {
+                $config[$field] = $value;
+                return true;
+            }
+
+            return false;
+        }
+
+        // Nested field update (e.g. FAQ/accordion item arrays)
+        if (is_array($config[$field]) && array_key_exists('value', $config[$field]) && is_array($config[$field]['value'])) {
+            return $this->setArrayValueByPath($config[$field]['value'], $nestedPath, $value);
+        }
+
+        if (is_array($config[$field])) {
+            return $this->setArrayValueByPath($config[$field], $nestedPath, $value);
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array{0: string, 1: ?string}
+     */
+    private function splitCmsFieldPath(string $fieldPath): array
+    {
+        $parts = explode('__', $fieldPath, 2);
+        return [$parts[0], $parts[1] ?? null];
+    }
+
+    /**
+     * @param array<mixed> $data
+     */
+    private function setArrayValueByPath(array &$data, string $path, string $value): bool
+    {
+        if ($path === '') {
+            return false;
+        }
+
+        $segments = explode('.', $path);
+        $current = &$data;
+        $lastIndex = count($segments) - 1;
+
+        foreach ($segments as $index => $segment) {
+            if (!is_array($current) || !array_key_exists($segment, $current)) {
+                return false;
+            }
+
+            if ($index === $lastIndex) {
+                if (is_array($current[$segment])) {
+                    return false;
+                }
+
+                $current[$segment] = $value;
+                return true;
+            }
+
+            $current = &$current[$segment];
+        }
+
+        return false;
     }
 
     // ========================================
