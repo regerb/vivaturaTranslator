@@ -90,6 +90,9 @@ class AnthropicClient
 Translate the following JSON object values to {$languageName} ({$targetLanguage}).
 Keep the JSON keys unchanged, only translate the values.
 Return ONLY the translated JSON object, no additional text.
+The response must be valid RFC8259 JSON.
+- Escape all double quotes inside values as \\"
+- Do not include literal tab/newline characters inside values; use \\t and \\n escapes instead.
 
 {$technicalRules}
 
@@ -133,19 +136,7 @@ PROMPT;
             'length' => strlen($translatedJson)
         ]);
 
-        $translated = json_decode($translatedJson, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->logger->error('Failed to parse Claude translation response as JSON', [
-                'response' => $translatedJson,
-                'error' => json_last_error_msg(),
-                'firstChars' => substr($translatedJson, 0, 100),
-                'lastChars' => substr($translatedJson, -100)
-            ]);
-            throw new \RuntimeException('Failed to parse translation response: ' . json_last_error_msg());
-        }
-
-        return $translated;
+        return $this->decodeBatchTranslationJson($translatedJson);
     }
 
     public function getAvailableModels(): array
@@ -305,5 +296,197 @@ RULES;
         ];
 
         return $commonLanguages[$isoCode] ?? $isoCode;
+    }
+
+    /**
+     * Decode translated JSON with recovery for common LLM formatting issues.
+     *
+     * @return array<string, string>
+     */
+    private function decodeBatchTranslationJson(string $translatedJson): array
+    {
+        $lastError = 'Unknown parsing error';
+
+        try {
+            return $this->decodeJsonAssoc($translatedJson);
+        } catch (\Throwable $e) {
+            $lastError = $e->getMessage();
+            $this->logger->warning('AnthropicClient: Raw JSON parse failed, trying sanitized parse', [
+                'error' => $lastError
+            ]);
+        }
+
+        $sanitizedJson = $this->sanitizeJsonForDecode($translatedJson);
+
+        try {
+            return $this->decodeJsonAssoc($sanitizedJson);
+        } catch (\Throwable $e) {
+            $lastError = $e->getMessage();
+        }
+
+        $this->logger->error('Failed to parse Claude translation response as JSON', [
+            'response' => $translatedJson,
+            'sanitizedResponse' => $sanitizedJson,
+            'error' => $lastError,
+            'firstChars' => substr($translatedJson, 0, 100),
+            'lastChars' => substr($translatedJson, -100)
+        ]);
+
+        throw new \RuntimeException('Failed to parse translation response: ' . $lastError);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function decodeJsonAssoc(string $json): array
+    {
+        $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+        if (!is_array($decoded)) {
+            throw new \RuntimeException('Decoded response is not a JSON object.');
+        }
+
+        return $decoded;
+    }
+
+    private function sanitizeJsonForDecode(string $json): string
+    {
+        $clean = trim($json);
+        $clean = preg_replace('/^\xEF\xBB\xBF/', '', $clean) ?? $clean;
+
+        $extracted = $this->extractFirstJsonObject($clean);
+        if ($extracted !== null) {
+            $clean = $extracted;
+        }
+
+        // Remove invalid UTF-8 bytes if present.
+        if (!preg_match('//u', $clean) && function_exists('iconv')) {
+            $converted = iconv('UTF-8', 'UTF-8//IGNORE', $clean);
+            if ($converted !== false) {
+                $clean = $converted;
+            }
+        }
+
+        // Remove illegal control characters (but keep CR/LF/TAB for dedicated escaping).
+        $clean = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $clean) ?? $clean;
+        $clean = $this->escapeControlCharsInsideJsonStrings($clean);
+
+        // Remove trailing commas before object/array endings.
+        $clean = preg_replace('/,\s*([}\]])/', '$1', $clean) ?? $clean;
+
+        return trim($clean);
+    }
+
+    private function extractFirstJsonObject(string $text): ?string
+    {
+        $start = strpos($text, '{');
+        if ($start === false) {
+            return null;
+        }
+
+        $inString = false;
+        $escaped = false;
+        $depth = 0;
+        $length = strlen($text);
+
+        for ($i = $start; $i < $length; $i++) {
+            $char = $text[$i];
+
+            if ($inString) {
+                if ($escaped) {
+                    $escaped = false;
+                    continue;
+                }
+
+                if ($char === '\\') {
+                    $escaped = true;
+                    continue;
+                }
+
+                if ($char === '"') {
+                    $inString = false;
+                }
+
+                continue;
+            }
+
+            if ($char === '"') {
+                $inString = true;
+                continue;
+            }
+
+            if ($char === '{') {
+                $depth++;
+                continue;
+            }
+
+            if ($char === '}') {
+                $depth--;
+
+                if ($depth === 0) {
+                    return substr($text, $start, $i - $start + 1);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function escapeControlCharsInsideJsonStrings(string $json): string
+    {
+        $length = strlen($json);
+        $result = '';
+        $inString = false;
+        $escaped = false;
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $json[$i];
+
+            if ($inString) {
+                if ($escaped) {
+                    $result .= $char;
+                    $escaped = false;
+                    continue;
+                }
+
+                if ($char === '\\') {
+                    $result .= $char;
+                    $escaped = true;
+                    continue;
+                }
+
+                if ($char === '"') {
+                    $inString = false;
+                    $result .= $char;
+                    continue;
+                }
+
+                if ($char === "\n") {
+                    $result .= '\\n';
+                    continue;
+                }
+
+                if ($char === "\r") {
+                    $result .= '\\r';
+                    continue;
+                }
+
+                if ($char === "\t") {
+                    $result .= '\\t';
+                    continue;
+                }
+
+                $result .= $char;
+                continue;
+            }
+
+            if ($char === '"') {
+                $inString = true;
+            }
+
+            $result .= $char;
+        }
+
+        return $result;
     }
 }
