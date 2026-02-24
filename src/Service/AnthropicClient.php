@@ -324,9 +324,27 @@ RULES;
             $lastError = $e->getMessage();
         }
 
+        $repairedJson = $this->repairLikelyUnescapedQuotesInJsonValues($sanitizedJson);
+
+        try {
+            return $this->decodeJsonAssoc($repairedJson);
+        } catch (\Throwable $e) {
+            $lastError = $e->getMessage();
+        }
+
+        $lenientMap = $this->decodeStringMapLenient($repairedJson);
+        if (!empty($lenientMap)) {
+            $this->logger->warning('AnthropicClient: Parsed translation response with lenient key/value fallback', [
+                'pairCount' => count($lenientMap)
+            ]);
+
+            return $lenientMap;
+        }
+
         $this->logger->error('Failed to parse Claude translation response as JSON', [
             'response' => $translatedJson,
             'sanitizedResponse' => $sanitizedJson,
+            'repairedResponse' => $repairedJson,
             'error' => $lastError,
             'firstChars' => substr($translatedJson, 0, 100),
             'lastChars' => substr($translatedJson, -100)
@@ -340,13 +358,24 @@ RULES;
      */
     private function decodeJsonAssoc(string $json): array
     {
-        $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
 
         if (!is_array($decoded)) {
             throw new \RuntimeException('Decoded response is not a JSON object.');
         }
 
-        return $decoded;
+        $result = [];
+        foreach ($decoded as $key => $value) {
+            if (!is_string($key)) {
+                continue;
+            }
+
+            if (is_scalar($value) || $value === null) {
+                $result[$key] = (string) $value;
+            }
+        }
+
+        return $result;
     }
 
     private function sanitizeJsonForDecode(string $json): string
@@ -488,5 +517,119 @@ RULES;
         }
 
         return $result;
+    }
+
+    /**
+     * Repair likely unescaped double quotes inside JSON string values.
+     * A quote inside a value is treated as content when it is not followed by ',' or '}'.
+     */
+    private function repairLikelyUnescapedQuotesInJsonValues(string $json): string
+    {
+        $length = strlen($json);
+        $result = '';
+        $inString = false;
+        $escaped = false;
+        $stringRole = null; // key|value|null
+        $lastSignificant = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $json[$i];
+
+            if ($inString) {
+                if ($escaped) {
+                    $result .= $char;
+                    $escaped = false;
+                    continue;
+                }
+
+                if ($char === '\\') {
+                    $result .= $char;
+                    $escaped = true;
+                    continue;
+                }
+
+                if ($char === '"') {
+                    if ($stringRole === 'value' && !$this->isQuoteLikelyStringTerminator($json, $i + 1)) {
+                        $result .= '\\"';
+                        continue;
+                    }
+
+                    $inString = false;
+                    $stringRole = null;
+                    $result .= $char;
+                    continue;
+                }
+
+                $result .= $char;
+                continue;
+            }
+
+            if ($char === '"') {
+                $inString = true;
+                $stringRole = $lastSignificant === ':' ? 'value' : 'key';
+                $result .= $char;
+                continue;
+            }
+
+            if (!ctype_space($char)) {
+                $lastSignificant = $char;
+            }
+
+            $result .= $char;
+        }
+
+        return $result;
+    }
+
+    private function isQuoteLikelyStringTerminator(string $json, int $index): bool
+    {
+        $length = strlen($json);
+        for ($i = $index; $i < $length; $i++) {
+            $char = $json[$i];
+
+            if (ctype_space($char)) {
+                continue;
+            }
+
+            return $char === ',' || $char === '}';
+        }
+
+        return true;
+    }
+
+    /**
+     * Best-effort parser for object-style `"key":"value"` pairs.
+     *
+     * @return array<string, string>
+     */
+    private function decodeStringMapLenient(string $json): array
+    {
+        $pairs = [];
+        $matchCount = preg_match_all('/"((?:\\\\.|[^"\\\\])*)"\s*:\s*"((?:\\\\.|[^"\\\\])*)"/su', $json, $matches, PREG_SET_ORDER);
+
+        if ($matchCount === false || $matchCount === 0) {
+            return [];
+        }
+
+        foreach ($matches as $match) {
+            $key = $this->decodeJsonStringToken($match[1]);
+            if ($key === '') {
+                continue;
+            }
+
+            $pairs[$key] = $this->decodeJsonStringToken($match[2]);
+        }
+
+        return $pairs;
+    }
+
+    private function decodeJsonStringToken(string $token): string
+    {
+        $decoded = json_decode('"' . $token . '"', true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+        if (is_string($decoded)) {
+            return $decoded;
+        }
+
+        return stripcslashes($token);
     }
 }
