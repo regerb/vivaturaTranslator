@@ -357,6 +357,7 @@ class TranslationController extends AbstractController
         $criteria->addFilter(new EqualsFilter('setId', $setId));
         $criteria->setLimit($limit);
         $criteria->setOffset(($page - 1) * $limit);
+        $criteria->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
         $criteria->addSorting(new FieldSorting('translationKey', FieldSorting::ASCENDING));
 
         if (!empty($search)) {

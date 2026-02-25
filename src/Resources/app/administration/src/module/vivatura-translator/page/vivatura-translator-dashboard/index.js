@@ -787,11 +787,14 @@ Component.register('vivatura-translator-dashboard', {
         async onSourceSnippetSetChange(value) {
             // Ensure we use the selected value immediately
             this.sourceSnippetSet = value;
+            this.snippetPage = 1;
+            this.selectedSnippets = [];
 
             if (this.sourceSnippetSet) {
                 await this.loadSnippets();
             } else {
                 this.snippets = [];
+                this.snippetTotal = 0;
             }
         },
 
@@ -813,6 +816,12 @@ Component.register('vivatura-translator-dashboard', {
                 const response = await this.httpClient.get(`/_action/vivatura-translator/snippets?${params}`, { headers: this.authHeaders });
                 this.snippets = response.data.snippets || [];
                 this.snippetTotal = response.data.total || 0;
+
+                const maxPage = Math.max(1, Math.ceil(this.snippetTotal / this.snippetLimit));
+                if (this.snippetPage > maxPage) {
+                    this.snippetPage = maxPage;
+                    await this.loadSnippets();
+                }
             } catch (error) {
                 console.error('Failed to load snippets:', error);
                 this.createNotificationError({
@@ -827,11 +836,21 @@ Component.register('vivatura-translator-dashboard', {
         onSnippetSearch(term) {
             this.snippetSearch = term;
             this.snippetPage = 1;
+            this.selectedSnippets = [];
             this.loadSnippets();
         },
 
         onSnippetPageChange(page) {
-            this.snippetPage = typeof page === 'object' ? page.page : page;
+            if (typeof page === 'object') {
+                this.snippetPage = Number(page.page) || 1;
+                if (page.limit) {
+                    this.snippetLimit = Number(page.limit) || this.snippetLimit;
+                }
+            } else {
+                this.snippetPage = Number(page) || 1;
+            }
+
+            this.selectedSnippets = [];
             this.loadSnippets();
         },
 

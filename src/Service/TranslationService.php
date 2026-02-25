@@ -111,7 +111,13 @@ class TranslationService
             ]);
 
             try {
-                $translated = $this->anthropicClient->translateBatch($content, $languageCode, $systemPrompt);
+                $translated = $this->translateContentRobust(
+                    $content,
+                    $languageCode,
+                    $systemPrompt,
+                    'product',
+                    $productId
+                );
 
                 $this->logger->info('TranslationService: Translation received from API', [
                     'productId' => $productId,
@@ -204,7 +210,13 @@ class TranslationService
             ]);
 
             try {
-                $translated = $this->anthropicClient->translateBatch($content, $languageCode, $systemPrompt);
+                $translated = $this->translateContentRobust(
+                    $content,
+                    $languageCode,
+                    $systemPrompt,
+                    'cms_page',
+                    $pageId
+                );
 
                 $this->logger->warning('TranslationService: CMS Page translation received', [
                     'pageId' => $pageId,
@@ -755,6 +767,69 @@ class TranslationService
                 ]
             ], $context);
         }
+    }
+
+    /**
+     * Translate content in batch and retry missing keys individually.
+     *
+     * @param array<string, string> $sourceContent
+     * @return array<string, string>
+     */
+    private function translateContentRobust(
+        array $sourceContent,
+        string $targetLanguageCode,
+        string $systemPrompt,
+        string $entityType,
+        string $entityId
+    ): array {
+        $translated = $this->anthropicClient->translateBatch($sourceContent, $targetLanguageCode, $systemPrompt);
+        $translated = $this->flattenArray($translated);
+
+        // Keep only keys that belong to the request payload.
+        $normalized = [];
+        foreach ($translated as $key => $value) {
+            if (array_key_exists($key, $sourceContent)) {
+                $normalized[$key] = $value;
+            }
+        }
+
+        $missing = array_diff_key($sourceContent, $normalized);
+        if (empty($missing)) {
+            return $normalized;
+        }
+
+        $this->logger->warning('TranslationService: Missing keys in batch response, retrying individually', [
+            'entityType' => $entityType,
+            'entityId' => $entityId,
+            'targetLanguageCode' => $targetLanguageCode,
+            'missingKeys' => array_keys($missing),
+            'missingCount' => count($missing),
+        ]);
+
+        foreach ($missing as $key => $value) {
+            try {
+                $normalized[$key] = $this->anthropicClient->translate((string) $value, $targetLanguageCode, $systemPrompt);
+            } catch (\Exception $e) {
+                $this->logger->error('TranslationService: Individual fallback translation failed', [
+                    'entityType' => $entityType,
+                    'entityId' => $entityId,
+                    'targetLanguageCode' => $targetLanguageCode,
+                    'field' => $key,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if (empty($normalized)) {
+            throw new \RuntimeException(sprintf(
+                'No translatable fields could be translated for %s %s to %s',
+                $entityType,
+                $entityId,
+                $targetLanguageCode
+            ));
+        }
+
+        return $normalized;
     }
 
     private function getLanguageIdByIso(string $iso, Context $context): ?string
