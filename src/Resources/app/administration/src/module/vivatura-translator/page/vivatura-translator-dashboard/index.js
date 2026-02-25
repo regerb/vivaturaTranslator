@@ -78,7 +78,10 @@ Component.register('vivatura-translator-dashboard', {
             overwriteExisting: false,
 
             // Settings
-            languagePrompts: {}
+            languagePrompts: {},
+
+            // Pagination
+            paginationSteps: [10, 25, 50, 100, 250, 500]
         };
     },
 
@@ -600,6 +603,15 @@ Component.register('vivatura-translator-dashboard', {
                 const response = await this.httpClient.get(`/_action/vivatura-translator/products?${params}`, { headers: this.authHeaders });
                 this.products = response.data.products || [];
                 this.productTotal = response.data.total || 0;
+                this.productPage = Number(response.data.page) || this.productPage;
+                this.productLimit = Number(response.data.limit) || this.productLimit;
+
+                const maxPage = Math.max(1, Math.ceil(this.productTotal / this.productLimit));
+                if (this.productPage > maxPage) {
+                    this.productPage = maxPage;
+                    await this.loadProducts();
+                    return;
+                }
             } catch (error) {
                 console.error('Failed to load products:', error);
                 this.createNotificationError({
@@ -618,7 +630,16 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         onProductPageChange(page) {
-            this.productPage = typeof page === 'object' ? page.page : page;
+            if (typeof page === 'object' && page !== null) {
+                this.productPage = Number(page.page) || 1;
+                if (page.limit) {
+                    this.productLimit = Number(page.limit) || this.productLimit;
+                }
+            } else {
+                this.productPage = Number(page) || 1;
+            }
+
+            this.selectedProducts = [];
             this.loadProducts();
         },
 
@@ -695,6 +716,15 @@ Component.register('vivatura-translator-dashboard', {
                 const response = await this.httpClient.get(`/_action/vivatura-translator/cms-pages?${params}`, { headers: this.authHeaders });
                 this.cmsPages = response.data.pages || [];
                 this.cmsTotal = response.data.total || 0;
+                this.cmsPage = Number(response.data.page) || this.cmsPage;
+                this.cmsLimit = Number(response.data.limit) || this.cmsLimit;
+
+                const maxPage = Math.max(1, Math.ceil(this.cmsTotal / this.cmsLimit));
+                if (this.cmsPage > maxPage) {
+                    this.cmsPage = maxPage;
+                    await this.loadCmsPages();
+                    return;
+                }
             } catch (error) {
                 console.error('Failed to load CMS pages:', error);
                 this.createNotificationError({
@@ -713,7 +743,16 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         onCmsPageChange(page) {
-            this.cmsPage = typeof page === 'object' ? page.page : page;
+            if (typeof page === 'object' && page !== null) {
+                this.cmsPage = Number(page.page) || 1;
+                if (page.limit) {
+                    this.cmsLimit = Number(page.limit) || this.cmsLimit;
+                }
+            } else {
+                this.cmsPage = Number(page) || 1;
+            }
+
+            this.selectedCmsPages = [];
             this.loadCmsPages();
         },
 
@@ -816,6 +855,8 @@ Component.register('vivatura-translator-dashboard', {
                 const response = await this.httpClient.get(`/_action/vivatura-translator/snippets?${params}`, { headers: this.authHeaders });
                 this.snippets = response.data.snippets || [];
                 this.snippetTotal = response.data.total || 0;
+                this.snippetPage = Number(response.data.page) || this.snippetPage;
+                this.snippetLimit = Number(response.data.limit) || this.snippetLimit;
 
                 const maxPage = Math.max(1, Math.ceil(this.snippetTotal / this.snippetLimit));
                 if (this.snippetPage > maxPage) {

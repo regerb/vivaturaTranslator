@@ -64,12 +64,13 @@ class TranslationController extends AbstractController
     public function getProducts(Request $request, Context $context): JsonResponse
     {
         $page = max(1, (int) $request->query->get('page', 1));
-        $limit = min(100, max(1, (int) $request->query->get('limit', 25)));
+        $limit = min(500, max(1, (int) $request->query->get('limit', 25)));
         $search = $request->query->get('search', '');
 
         $criteria = new Criteria();
         $criteria->setLimit($limit);
         $criteria->setOffset(($page - 1) * $limit);
+        $criteria->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
         $criteria->addSorting(new FieldSorting('name', FieldSorting::ASCENDING));
         $criteria->addAssociation('translations');
 
@@ -183,12 +184,13 @@ class TranslationController extends AbstractController
     public function getCmsPages(Request $request, Context $context): JsonResponse
     {
         $page = max(1, (int) $request->query->get('page', 1));
-        $limit = min(100, max(1, (int) $request->query->get('limit', 25)));
+        $limit = min(500, max(1, (int) $request->query->get('limit', 25)));
         $search = $request->query->get('search', '');
 
         $criteria = new Criteria();
         $criteria->setLimit($limit);
         $criteria->setOffset(($page - 1) * $limit);
+        $criteria->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
         $criteria->addSorting(new FieldSorting('name', FieldSorting::ASCENDING));
         $criteria->addAssociation('translations');
         $criteria->addAssociation('sections.blocks.slots');

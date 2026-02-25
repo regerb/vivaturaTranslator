@@ -81,7 +81,7 @@
         display: flex;
         align-items: center;
         gap: 16px;
-        padding: 12px 0;
+        padding: 0;
 
         .hint {
             color: #6b7280;
@@ -123,16 +123,13 @@
     }
 
     .vivatura-card-footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 16px;
-        padding: 16px 0;
+        width: 100%;
+        padding: 0;
         position: relative;
         z-index: 1;
 
         .sw-pagination {
+            width: 100%;
             margin-bottom: 0;
             position: relative;
             z-index: 10;
@@ -144,6 +141,19 @@
             button, .sw-field {
                 pointer-events: auto;
                 cursor: pointer;
+            }
+        }
+
+        .selection-info {
+            justify-content: flex-end;
+            padding: 12px 20px 0;
+        }
+    }
+
+    @media screen and (max-width: 900px) {
+        .vivatura-card-footer {
+            .selection-info {
+                justify-content: flex-start;
             }
         }
     }

@@ -151,6 +151,7 @@
                             :total="productTotal"
                             :limit="productLimit"
                             :page="productPage"
+                            :steps="paginationSteps"
                             @page-change="onProductPageChange"
                         />
                         <div class="selection-info">
@@ -208,6 +209,7 @@
                             :total="cmsTotal"
                             :limit="cmsLimit"
                             :page="cmsPage"
+                            :steps="paginationSteps"
                             @page-change="onCmsPageChange"
                         />
                         <div class="selection-info">
@@ -407,6 +409,7 @@
                             :total="snippetTotal"
                             :limit="snippetLimit"
                             :page="snippetPage"
+                            :steps="paginationSteps"
                             @page-change="onSnippetPageChange"
                         />
                         <div class="selection-info">
