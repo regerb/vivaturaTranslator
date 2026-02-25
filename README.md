@@ -26,7 +26,7 @@ KI-gestützte Übersetzungen für Produkte, CMS-Seiten und Snippets mit Anthropi
 ```
 
 ```bash
-composer require vivatura/vivatura-translator:dev-main
+composer require vivatura/vivatura-translator:^2.4
 bin/console plugin:refresh
 bin/console plugin:install VivaturaTranslator --activate
 ```
@@ -57,6 +57,17 @@ In der Produkt- oder CMS-Seiten-Bearbeitung den Button **"Mit KI übersetzen"** 
 - Shopware 6.6+
 - PHP 8.1+
 - Anthropic API Key
+
+## Releases (automatisch)
+
+Releases werden über GitHub Actions mit `release-please` erstellt.
+
+- Push auf `main` erzeugt/aktualisiert automatisch einen Release-PR
+- Nach Merge des Release-PR wird automatisch ein Git-Tag (`vX.Y.Z`) und GitHub Release erstellt
+- Basis sind Conventional Commits:
+  - `fix:` -> Patch Release
+  - `feat:` -> Minor Release
+  - `feat!:` oder `BREAKING CHANGE:` -> Major Release
 
 ## Lizenz
 
