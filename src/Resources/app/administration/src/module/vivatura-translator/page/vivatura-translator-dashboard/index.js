@@ -58,6 +58,7 @@ Component.register('vivatura-translator-dashboard', {
             snippetPage: 1,
             snippetLimit: 100,
             snippetTotal: 0,
+            snippetLoadRequestId: 0,
 
             // Bulk snippet translation
             bulkSourceIso: null,
@@ -409,9 +410,9 @@ Component.register('vivatura-translator-dashboard', {
                     // Iterate over SOURCE keys to ensure we clean up obsolete ones
                     // snippetKeys = all keys from source file
                     snippetKeys.forEach(key => {
-                        if (allTranslated[key]) {
+                        if (Object.prototype.hasOwnProperty.call(allTranslated, key)) {
                             smartMerged[key] = allTranslated[key];
-                        } else if (existingTargetSnippets[key]) {
+                        } else if (Object.prototype.hasOwnProperty.call(existingTargetSnippets, key)) {
                             // Fallback to existing if translation missing/failed
                             smartMerged[key] = existingTargetSnippets[key];
                         }
@@ -826,6 +827,7 @@ Component.register('vivatura-translator-dashboard', {
         async onSourceSnippetSetChange(value) {
             // Ensure we use the selected value immediately
             this.sourceSnippetSet = value;
+            this.snippetSearch = '';
             this.snippetPage = 1;
             this.selectedSnippets = [];
 
@@ -842,26 +844,42 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         async loadSnippets() {
-            if (!this.sourceSnippetSet) return;
+            if (!this.sourceSnippetSet) {
+                this.snippets = [];
+                this.snippetTotal = 0;
+                return;
+            }
 
             this.isLoadingSnippets = true;
+            const requestId = ++this.snippetLoadRequestId;
+            const requestedSetId = this.sourceSnippetSet;
+            const requestedPage = this.snippetPage;
+            const requestedLimit = this.snippetLimit;
+            const requestedSearch = this.snippetSearch || '';
             try {
                 const params = new URLSearchParams({
-                    setId: this.sourceSnippetSet,
-                    page: this.snippetPage,
-                    limit: this.snippetLimit,
-                    search: this.snippetSearch
+                    setId: requestedSetId,
+                    page: requestedPage,
+                    limit: requestedLimit,
+                    search: requestedSearch
                 });
                 const response = await this.httpClient.get(`/_action/vivatura-translator/snippets?${params}`, { headers: this.authHeaders });
+
+                // Ignore stale responses from previous requests.
+                if (requestId !== this.snippetLoadRequestId || requestedSetId !== this.sourceSnippetSet) {
+                    return;
+                }
+
                 this.snippets = response.data.snippets || [];
                 this.snippetTotal = response.data.total || 0;
-                this.snippetPage = Number(response.data.page) || this.snippetPage;
-                this.snippetLimit = Number(response.data.limit) || this.snippetLimit;
+                this.snippetPage = Number(response.data.page) || requestedPage;
+                this.snippetLimit = Number(response.data.limit) || requestedLimit;
 
                 const maxPage = Math.max(1, Math.ceil(this.snippetTotal / this.snippetLimit));
                 if (this.snippetPage > maxPage) {
                     this.snippetPage = maxPage;
                     await this.loadSnippets();
+                    return;
                 }
             } catch (error) {
                 console.error('Failed to load snippets:', error);
@@ -882,7 +900,7 @@ Component.register('vivatura-translator-dashboard', {
         },
 
         onSnippetPageChange(page) {
-            if (typeof page === 'object') {
+            if (typeof page === 'object' && page !== null) {
                 this.snippetPage = Number(page.page) || 1;
                 if (page.limit) {
                     this.snippetLimit = Number(page.limit) || this.snippetLimit;

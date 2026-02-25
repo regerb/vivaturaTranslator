@@ -455,23 +455,23 @@ class TranslationService
 
         // Batch translate all snippets in chunks
         $textsToTranslate = [];
-        $snippetKeyMap = [];
         $skippedCount = 0;
 
         foreach ($sourceSnippets as $snippet) {
             $value = $snippet->getValue();
-            if (!empty($value)) {
-                $key = $snippet->getTranslationKey();
-
-                // Skip if translation already exists and we're not overwriting
-                if (!$overwriteExisting && isset($existingSnippetKeys[$key])) {
-                    $skippedCount++;
-                    continue;
-                }
-
-                $textsToTranslate[$key] = $value;
-                $snippetKeyMap[$key] = $snippet;
+            if ($value === null || $value === '') {
+                continue;
             }
+
+            $key = $snippet->getTranslationKey();
+
+            // Skip if translation already exists and we're not overwriting
+            if (!$overwriteExisting && isset($existingSnippetKeys[$key])) {
+                $skippedCount++;
+                continue;
+            }
+
+            $textsToTranslate[$key] = (string) $value;
         }
 
         if (empty($textsToTranslate)) {
