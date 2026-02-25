@@ -37,7 +37,12 @@ class TranslationMessageHandler
                 $result = $this->handleSnippetSetTranslation($message, $context);
             }
 
-            $this->updateJobStatus($jobId, 'completed', $result, $context);
+            $status = $this->hasAnySuccessfulTranslation($result) ? 'completed' : 'failed';
+            if ($status === 'failed' && !isset($result['error'])) {
+                $result['error'] = 'No translation target succeeded.';
+            }
+
+            $this->updateJobStatus($jobId, $status, $result, $context);
 
         } catch (\Exception $e) {
             $this->logger->error('Translation job failed', [
@@ -101,5 +106,20 @@ class TranslationMessageHandler
         }
 
         $this->translationJobRepository->update([$data], $context);
+    }
+
+    private function hasAnySuccessfulTranslation(array $result): bool
+    {
+        if (($result['success'] ?? null) === true) {
+            return true;
+        }
+
+        foreach ($result as $entry) {
+            if (is_array($entry) && (($entry['success'] ?? null) === true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

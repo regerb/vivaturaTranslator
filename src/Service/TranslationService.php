@@ -936,21 +936,44 @@ class TranslationService
 
     private function saveProductTranslation(string $productId, string $languageId, array $translated, Context $context): void
     {
+        $payload = $this->buildProductTranslationPayload($translated);
         $translationData = [
             'id' => $productId,
             'translations' => [
-                $languageId => $this->buildProductTranslationPayload($translated)
+                $languageId => $payload
             ]
         ];
 
-        $translatedContext = new Context(
-            $context->getSource(),
-            $context->getRuleIds(),
-            $context->getCurrencyId(),
-            [$languageId]
-        );
+        try {
+            // Keep default context for translation writes to avoid duplicate seo_url side effects.
+            $this->productRepository->update([$translationData], $context);
+        } catch (\Throwable $e) {
+            if (!$this->isSeoUrlDuplicateConstraint($e) || !array_key_exists('name', $payload)) {
+                throw $e;
+            }
 
-        $this->productRepository->update([$translationData], $translatedContext);
+            $fallbackPayload = $payload;
+            unset($fallbackPayload['name']);
+
+            if (empty($fallbackPayload)) {
+                throw $e;
+            }
+
+            $this->logger->warning('TranslationService: SEO URL duplicate while saving product name, retrying without name field', [
+                'productId' => $productId,
+                'languageId' => $languageId,
+                'error' => $e->getMessage(),
+            ]);
+
+            $this->productRepository->update([
+                [
+                    'id' => $productId,
+                    'translations' => [
+                        $languageId => $fallbackPayload
+                    ]
+                ]
+            ], $context);
+        }
     }
 
     private function buildProductTranslationPayload(array $translated): array
@@ -972,6 +995,14 @@ class TranslationService
         }
 
         return $payload;
+    }
+
+    private function isSeoUrlDuplicateConstraint(\Throwable $e): bool
+    {
+        $message = strtolower($e->getMessage());
+
+        return str_contains($message, 'uniq.seo_url.foreign_key')
+            || (str_contains($message, 'duplicate entry') && str_contains($message, 'seo_url'));
     }
 
     private function productHasTranslation(string $productId, string $languageId, Context $context): bool
