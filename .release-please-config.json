@@ -3,7 +3,6 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "package-name": "vivatura/vivatura-translator",
       "include-v-in-tag": true,
       "changelog-path": "CHANGELOG.md"
     }
